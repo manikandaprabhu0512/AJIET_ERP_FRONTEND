@@ -1,0 +1,1016 @@
+/* ====================================================
+   AJIET ERP — STUDENT PORTAL DASHBOARD STYLES
+   Docked YouTube-Style Sidebar & Viewport-Framed Layout
+   ==================================================== */
+
+:root {
+  --student-navy: #042d57;
+  --student-navy-dark: #021a35;
+  --student-accent: #0284c7;
+  --student-accent-light: #e0f2fe;
+  --student-bg: #f4f6fa;
+  --student-card-bg: #ffffff;
+  --student-border: #e2e8f0;
+  --student-border-dark: #cbd5e1;
+  --student-text-main: #0f172a;
+  --student-text-muted: #475569;
+  --student-text-sub: #64748b;
+  --student-success: #16a34a;
+}
+
+/* 1. FRAME LOCK: Full Viewport Container (Zero Window Overflow) */
+.student-portal-container {
+  height: 100vh;
+  max-height: 100vh;
+  width: 100vw;
+  max-width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background: var(--student-bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--student-text-main);
+  overflow: hidden; /* Locks outer frame: no horizontal or vertical window scrollbars */
+  box-sizing: border-box;
+}
+
+/* 2. SUB-BANNER BAR — REMOVED (date/time now lives in Header) */
+
+.student-status-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 3px;
+}
+
+.student-role-tag {
+  display: inline-block;
+  background: var(--student-navy);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+
+.student-active-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #15803d;
+}
+
+.pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
+}
+
+/* ====================================================
+   3. WORKSPACE: DOCKED FIXED SIDEBAR + INDEPENDENT MAIN PANEL
+   ==================================================== */
+.student-portal-workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  box-sizing: border-box;
+  align-items: stretch;
+}
+
+/* ----------------------------------------------------
+   SIDEBAR NAVIGATION (PERMANENTLY FIXED ON LEFT-HAND SIDE)
+   ---------------------------------------------------- */
+.student-portal-sidebar {
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #ffffff;
+  border-right: 1px solid var(--student-border-dark);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-shadow: 1px 0 6px rgba(0, 0, 0, 0.03);
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  z-index: 20;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.student-portal-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.student-portal-sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* EXPANDED MODE (230px, Compact & Proportional) */
+.student-portal-sidebar.sidebar-open {
+  width: 230px;
+  min-width: 230px;
+  padding: 12px 10px;
+  gap: 12px;
+}
+
+/* COLLAPSED MINI-SIDEBAR (68px, Like YouTube) */
+.student-portal-sidebar.sidebar-mini {
+  width: 68px;
+  min-width: 68px;
+  padding: 12px 4px;
+  align-items: center;
+}
+
+/* Student Badge Card (Expanded mode) */
+.sidebar-student-card {
+  background: #f8fafc;
+  border: 1px solid var(--student-border);
+  border-top: 3px solid var(--student-navy);
+  border-radius: 6px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.student-avatar-wrap {
+  margin-bottom: 6px;
+}
+
+.student-initials-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--student-navy) 0%, #034b94 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(4, 45, 87, 0.22);
+  border: 2px solid #ffffff;
+}
+
+.sidebar-student-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+}
+
+.sidebar-student-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--student-navy);
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.sidebar-student-usn {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--student-accent);
+  letter-spacing: 0.4px;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.sidebar-student-branch {
+  font-size: 0.8rem;
+  color: var(--student-text-muted);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+.sidebar-student-badge {
+  display: inline-block;
+  margin-top: 4px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  align-self: center;
+}
+
+/* Sidebar Menu (Expanded) */
+.sidebar-nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-menu-heading {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--student-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 2px 8px 6px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.16s ease;
+  font-family: inherit;
+  color: var(--student-text-main);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sidebar-nav-item:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.sidebar-nav-item.active {
+  background: #f0f7ff;
+  border-color: #bfdbfe;
+  color: var(--student-navy);
+}
+
+.nav-item-icon-box {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.16s ease;
+}
+
+.sidebar-nav-item.active .nav-item-icon-box {
+  background: var(--student-navy);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(4, 45, 87, 0.22);
+}
+
+.nav-item-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.nav-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-subtitle {
+  font-size: 0.76rem;
+  color: var(--student-text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-item-arrow {
+  color: #94a3b8;
+  transition: transform 0.16s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-nav-item.active .nav-item-arrow {
+  color: var(--student-navy);
+  transform: translateX(2px);
+}
+
+.sidebar-system-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  color: #64748b;
+  padding: 8px 4px 0 4px;
+  justify-content: center;
+  margin-top: auto;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* YOUTUBE COLLAPSED MINI-MENU (68px) */
+.sidebar-mini-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.sidebar-mini-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 2px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.16s ease;
+  width: 100%;
+}
+
+.sidebar-mini-item:hover {
+  background: #f1f5f9;
+  color: var(--student-navy);
+}
+
+.sidebar-mini-item.active {
+  background: #f0f7ff;
+  color: var(--student-navy);
+}
+
+.mini-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.16s ease;
+}
+
+.sidebar-mini-item.active .mini-icon-wrap {
+  background: var(--student-navy);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(4, 45, 87, 0.22);
+}
+
+.mini-item-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.1;
+  color: inherit;
+}
+
+/* ----------------------------------------------------
+   4. RIGHT MAIN CONTENT PANEL (INDEPENDENT VERTICAL SCROLL)
+   ---------------------------------------------------- */
+.student-portal-main-panel {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden; /* Zero horizontal scrolling left/right */
+  padding: 16px 20px 24px 20px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.student-portal-main-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.student-portal-main-panel::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.student-portal-main-panel::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+.tab-pane-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  animation: fadeIn 0.18s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pane Header Banner */
+.pane-header-banner {
+  background: #ffffff;
+  border: 1px solid var(--student-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+}
+
+.pane-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pane-title-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: var(--student-navy);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(4, 45, 87, 0.22);
+  flex-shrink: 0;
+}
+
+.academics-icon-badge {
+  background: #0369a1;
+}
+
+.extra-icon-badge {
+  background: #7c3aed;
+}
+
+.pane-main-title {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--student-navy);
+}
+
+.pane-main-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.88rem;
+  color: var(--student-text-sub);
+}
+
+/* ====================================================
+   VIEW 1: PROFILE TAB STYLING (PROPORTIONAL & CRISP)
+   ==================================================== */
+.student-overview-hero-card {
+  background: #ffffff;
+  border: 1px solid var(--student-border);
+  border-left: 4px solid var(--student-accent);
+  border-radius: 6px;
+  padding: 12px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+}
+
+.overview-hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-data-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.hero-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--student-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.hero-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--student-navy);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usn-color-text {
+  color: var(--student-accent);
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+/* Profile Section Cards */
+.profile-section-card {
+  background: #ffffff;
+  border: 1px solid var(--student-border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+}
+
+.profile-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 12px;
+}
+
+.section-badge-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: var(--student-navy);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.section-head-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.section-heading-text {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--student-navy);
+}
+
+.section-heading-sub {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--student-text-sub);
+}
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.profile-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.profile-cell.full-width {
+  grid-column: 1 / -1;
+}
+
+.cell-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--student-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+}
+
+.cell-value {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--student-text-main);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ====================================================
+   VIEW 2: ACADEMICS TAB STYLING
+   ==================================================== */
+.academic-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: #ffffff;
+  border: 1px solid var(--student-border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+}
+
+.stat-card.stat-success {
+  border-left: 3px solid var(--student-success);
+}
+
+.stat-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--student-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--student-navy);
+}
+
+.stat-sub {
+  font-size: 0.8rem;
+  color: var(--student-text-muted);
+}
+
+.academic-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.acad-feature-card {
+  background: #ffffff;
+  border: 1px solid var(--student-border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.acad-feature-card:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  background: #e0f2fe;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feature-info h4 {
+  margin: 0 0 4px 0;
+  font-size: 1.0rem;
+  font-weight: 800;
+  color: var(--student-navy);
+}
+
+.feature-info p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--student-text-muted);
+  line-height: 1.4;
+}
+
+.mentor-assigned-card {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+}
+
+.mentor-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #92400e;
+  margin-bottom: 6px;
+}
+
+.mentor-card-head h4 {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.mentor-assigned-card p {
+  margin: 0 0 8px 0;
+  font-size: 0.88rem;
+  color: #78350f;
+}
+
+.mentor-data-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.86rem;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 8px 12px;
+  border-radius: 5px;
+}
+
+/* ====================================================
+   VIEW 3: EXTRACURRICULAR ACTIVITY TAB STYLING
+   ==================================================== */
+.activity-points-card {
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+  border: 1px solid #e9d5ff;
+  border-radius: 6px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 6px rgba(124, 58, 237, 0.05);
+  box-sizing: border-box;
+}
+
+.points-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.points-tag {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #7c3aed;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.points-title {
+  margin: 2px 0 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #4c1d95;
+}
+
+.points-counter {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.earned-points {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #7c3aed;
+}
+
+.total-points {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #6b21a8;
+}
+
+.points-progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: #ede9fe;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.points-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6, #6366f1);
+  border-radius: 5px;
+}
+
+.points-note {
+  font-size: 0.84rem;
+  color: #6b21a8;
+  font-weight: 600;
+}
+
+.extracurricular-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.club-card {
+  background: #ffffff;
+  border: 1px solid var(--student-border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.club-icon-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f3e8ff;
+  color: #7c3aed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.club-card h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--student-navy);
+}
+
+.club-card p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--student-text-muted);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.club-status-pill {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.club-status-pill.enrolled {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* ====================================================
+   RESPONSIVE DESIGN BREAKPOINTS
+   ==================================================== */
+
+/* ── Tablet: 1024px ── */
+@media (max-width: 1024px) {
+  .overview-hero-grid,
+  .academic-stats-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── Mobile/Small Tablet: 768px ── */
+@media (max-width: 768px) {
+  /* Sidebar becomes a slide-in overlay above the content */
+  .student-portal-workspace {
+    position: relative;
+  }
+
+  .student-portal-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    height: 100% !important;
+    max-height: 100% !important;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s ease;
+  }
+
+  /* When open: slide in from left */
+  .student-portal-sidebar.sidebar-open {
+    transform: translateX(0);
+    width: 260px !important;
+    min-width: 260px !important;
+    padding: 16px 12px;
+    gap: 14px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+
+  /* Mini mode stays hidden off-screen on mobile */
+  .student-portal-sidebar.sidebar-mini {
+    transform: translateX(-100%);
+  }
+
+  /* Dark semi-transparent backdrop behind open sidebar */
+  .sidebar-mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.42);
+    z-index: 199;
+    cursor: pointer;
+  }
+
+  /* Main panel always takes full width on mobile */
+  .student-portal-main-panel {
+    width: 100% !important;
+    padding: 12px 12px 20px 12px;
+  }
+
+  /* Profile hero: 2 columns on tablet, 1 on phone */
+  .overview-hero-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Everything else: single column */
+  .academic-stats-row,
+  .profile-details-grid,
+  .academic-modules-grid,
+  .extracurricular-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Slightly more relaxed cell padding on mobile */
+  .profile-cell {
+    padding: 10px 12px;
+  }
+
+  .cell-label {
+    font-size: 0.72rem;
+  }
+
+  .cell-value {
+    font-size: 0.9rem;
+  }
+
+  /* Pane title scales down */
+  .pane-main-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* ── Phone: 480px ── */
+@media (max-width: 480px) {
+  /* Hero strip goes single column on phone */
+  .overview-hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tab-pane-container {
+    gap: 10px;
+  }
+
+  .profile-section-card {
+    padding: 10px 12px;
+  }
+
+  .pane-header-banner {
+    padding: 10px 12px;
+  }
+
+  .pane-main-title {
+    font-size: 0.98rem;
+  }
+
+  .section-heading-text {
+    font-size: 0.95rem;
+  }
+}

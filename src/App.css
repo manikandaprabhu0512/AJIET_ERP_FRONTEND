@@ -1,0 +1,38 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg-page, #f0f4f8);
+}
+
+.main-content {
+  flex: 1;
+}
+
+.dashboard-placeholder {
+  padding: 32px 24px;
+}
+
+.welcome-banner {
+  background: #ffffff;
+  padding: 28px 24px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.welcome-banner h2 {
+  margin: 0 0 8px 0;
+  color: #042d57;
+  font-size: 1.5rem;
+}
+
+.welcome-banner p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.welcome-banner strong {
+  color: #0a66c2;
+}
