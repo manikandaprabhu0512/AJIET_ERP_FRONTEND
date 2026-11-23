@@ -7,10 +7,18 @@ import StudentSignup from './auth/StudentSignup';
 import FlashScreen from './common/FlashScreen';
 import Dashboard from './common/Dashboard';
 import NoInternet from './common/nointernet';
+import { getStoredSession, saveSession, clearSession } from './utils/sessionManager';
 
-/* ── Gateway page (/): select a portal, then push to /login ── */
+/* ── Gateway page (/): select a portal, then push to /login. If logged in, go to /dashboard ── */
 function GatewayPage() {
   const navigate = useNavigate();
+  const session = getStoredSession();
+
+  // Auto-redirect authenticated user directly to /dashboard on tab reopen / root visit
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const handleSelectRole = (roleConfig) => {
     navigate('/login', { state: { role: roleConfig } });
   };
@@ -23,6 +31,12 @@ function LoginPage() {
   const location = useLocation();
   const [showFlash, setShowFlash] = useState(false);
 
+  // If already authenticated with JWT / cookie session, redirect to /dashboard
+  const session = getStoredSession();
+  if (session && !showFlash) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // Role passed from Gateway via navigate state; fallback to Student
   const selectedRole = location.state?.role || {
     category: 'student',
@@ -33,17 +47,12 @@ function LoginPage() {
   };
 
   const handleLoginSuccess = (user) => {
-    try {
-      localStorage.setItem('ajiet_current_user', JSON.stringify(user));
-      localStorage.setItem('ajiet_is_logged_in', 'true');
-    } catch (e) {
-      console.warn('Storage error', e);
-    }
+    saveSession(user, user.token);
     setShowFlash(true);
   };
 
   const handleFlashComplete = () => {
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true });
   };
 
   if (showFlash) {
@@ -64,25 +73,12 @@ function LoginPage() {
 /* ── Dashboard page (/dashboard): reads authenticated user and renders role dashboard ── */
 function DashboardPage() {
   const navigate = useNavigate();
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ajiet_current_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState(() => getStoredSession());
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem('ajiet_is_logged_in');
-      localStorage.removeItem('ajiet_current_user');
-      localStorage.removeItem('ajiet_auth_token');
-    } catch (e) {
-      console.warn(e);
-    }
+    clearSession();
     setCurrentUser(null);
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   if (!currentUser) {
@@ -103,6 +99,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<StudentSignup />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );

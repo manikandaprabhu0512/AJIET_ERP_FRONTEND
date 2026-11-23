@@ -26,6 +26,7 @@ import {
   updatePassword
 } from '../services/authService';
 import { loginUserApi, updatePasswordApi } from '../services/apiService';
+import { saveSession } from '../utils/sessionManager';
 
 const createRandomCaptchaCode = () => {
   const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghkmnpqrstuvwxyz';
@@ -147,9 +148,9 @@ export default function LoginPortal({
     // Try backend MySQL API authentication first
     loginUserApi(cleanUsername, cleanPassword)
       .then((data) => {
-        // Save token and logged in user
+        // Save token and logged in user to both localStorage and Cookie
         if (data.token) {
-          localStorage.setItem('ajiet_auth_token', data.token);
+          saveSession(data.user, data.token);
         }
 
         const authUser = { ...data.user, token: data.token };
