@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import './App.css';
 import RoleSelectionGateway from './auth/RoleSelectionGateway';
 import LoginPortal from './auth/LoginPortal';
@@ -21,13 +21,7 @@ function GatewayPage() {
 function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [currentView, setCurrentView] = useState('login');
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ajiet_current_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch { return null; }
-  });
+  const [showFlash, setShowFlash] = useState(false);
 
   // Role passed from Gateway via navigate state; fallback to Student
   const selectedRole = location.state?.role || {
@@ -39,29 +33,22 @@ function LoginPage() {
   };
 
   const handleLoginSuccess = (user) => {
-    setCurrentUser(user);
-    try { localStorage.setItem('ajiet_current_user', JSON.stringify(user)); }
-    catch (e) { console.warn('Storage error', e); }
-    setCurrentView('flash');
+    try {
+      localStorage.setItem('ajiet_current_user', JSON.stringify(user));
+      localStorage.setItem('ajiet_is_logged_in', 'true');
+    } catch (e) {
+      console.warn('Storage error', e);
+    }
+    setShowFlash(true);
   };
 
   const handleFlashComplete = () => {
-    try { localStorage.setItem('ajiet_is_logged_in', 'true'); }
-    catch (e) { console.warn(e); }
-    setCurrentView('dashboard');
+    navigate('/dashboard');
   };
 
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem('ajiet_is_logged_in');
-      localStorage.removeItem('ajiet_current_user');
-    } catch (e) { console.warn(e); }
-    setCurrentUser(null);
-    navigate('/');
-  };
-
-  if (currentView === 'flash') return <FlashScreen onComplete={handleFlashComplete} />;
-  if (currentView === 'dashboard') return <Dashboard onLogout={handleLogout} currentUser={currentUser} />;
+  if (showFlash) {
+    return <FlashScreen onComplete={handleFlashComplete} />;
+  }
 
   return (
     <LoginPortal
@@ -74,6 +61,38 @@ function LoginPage() {
   );
 }
 
+/* ── Dashboard page (/dashboard): reads authenticated user and renders role dashboard ── */
+function DashboardPage() {
+  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ajiet_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem('ajiet_is_logged_in');
+      localStorage.removeItem('ajiet_current_user');
+      localStorage.removeItem('ajiet_auth_token');
+    } catch (e) {
+      console.warn(e);
+    }
+    setCurrentUser(null);
+    navigate('/');
+  };
+
+  if (!currentUser) {
+    // If not authenticated, redirect to portal gateway
+    return <Navigate to="/" replace />;
+  }
+
+  return <Dashboard onLogout={handleLogout} currentUser={currentUser} />;
+}
+
 /* ── Root App: routes only ── */
 export default function App() {
   return (
@@ -83,6 +102,7 @@ export default function App() {
         <Route path="/" element={<GatewayPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<StudentSignup />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </>
   );

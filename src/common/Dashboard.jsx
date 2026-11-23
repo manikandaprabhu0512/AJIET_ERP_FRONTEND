@@ -3,6 +3,8 @@ import './Dashboard.css';
 import Header from './Header';
 import Footer from './Footer';
 import StudentDashboard from '../student/StudentDashboard';
+import HodDashboard from '../department/HodDashboard';
+import FacultyDashboard from '../academic/FacultyDashboard';
 import {
   Users,
   Building2,
@@ -58,9 +60,20 @@ export default function Dashboard({ onLogout = () => {}, currentUser = null }) {
     return () => clearInterval(timer);
   }, []);
 
-  // Role based check: student role routes to dedicated StudentDashboard
-  const isStudent = currentUser?.role === 'student' || currentUser?.category === 'student';
+  // 1. Role based check: HOD (Department Academic Control)
+  const isHod = currentUser?.role === 'hod' || currentUser?.isHod || (currentUser?.category === 'department' && currentUser?.subRole === 'HOD');
+  if (isHod) {
+    return <HodDashboard onLogout={onLogout} currentUser={currentUser} />;
+  }
 
+  // 2. Role based check: Faculty / Subject Teacher
+  const isFaculty = currentUser?.role === 'faculty' || currentUser?.category === 'faculty';
+  if (isFaculty) {
+    return <FacultyDashboard onLogout={onLogout} currentUser={currentUser} />;
+  }
+
+  // 3. Role based check: Student
+  const isStudent = currentUser?.role === 'student' || currentUser?.category === 'student';
   if (isStudent) {
     return <StudentDashboard onLogout={onLogout} currentUser={currentUser} />;
   }

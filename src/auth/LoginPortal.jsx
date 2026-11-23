@@ -152,7 +152,7 @@ export default function LoginPortal({
           localStorage.setItem('ajiet_auth_token', data.token);
         }
 
-        const authUser = data.user;
+        const authUser = { ...data.user, token: data.token };
         setPendingUser(authUser);
 
         // Check if user requires first-time password change
@@ -235,6 +235,7 @@ export default function LoginPortal({
         // First login finished: enter dashboard
         const finalUser = {
           ...(updated.user || pendingUser),
+          token: pendingUser?.token || localStorage.getItem('ajiet_auth_token'),
           isFirstLogin: false
         };
         if (onLoginSuccess) {

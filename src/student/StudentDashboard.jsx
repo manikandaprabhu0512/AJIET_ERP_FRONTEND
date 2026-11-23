@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './StudentDashboard.css';
 import Header from '../common/Header';
 import Footer from '../common/Footer';
+import { getProfileApi, getStudentGradesApi } from '../services/apiService';
 import {
   User,
   GraduationCap,
@@ -13,61 +14,73 @@ import {
   ChevronRight,
   ShieldCheck,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  ClipboardList,
+  ChevronDown
 } from 'lucide-react';
 
-// Default mock profile when no session data is present
-const DEFAULT_STUDENT_PROFILE = {
+// Initial empty profile schema (no fake mock names or numbers)
+const EMPTY_STUDENT_PROFILE = {
   programType: 'UG',
-  admissionQuota: 'CET',
-  usn: '4JK26CS001',
-  branch: 'B.E. in Computer Science & Engineering',
-  section: 'Section A',
-  enrolledYear: '2026',
-  fullName: 'PRATHAM R SHETTY',
-  dob: '2005-08-15',
-  gender: 'Male',
-  bloodGroup: 'O+',
+  admissionQuota: '-',
+  usn: '',
+  branch: '',
+  section: '',
+  enrolledYear: '',
+  fullName: '',
+  dob: '',
+  gender: '',
+  bloodGroup: '',
   mediumOfInstruction: 'English',
-  placeOfStay: 'Hostel',
+  placeOfStay: '',
   pgOwnerName: '',
   pgAddress: '',
   pgContactCountryCode: '+91',
   pgContactNumber: '',
-  religion: 'Hindu',
-  caste: 'Bunt',
-  category: 'General Merit (GM)',
-  aadhaarNumber: '987654321098',
-  sslcPercentage: '95.6',
-  pucPcmPercentage: '94.0',
-  pucTotalPercentage: '94.8',
-  studiedKannadaInSSLC: 'Yes',
-  studentSsid: 'SSID-2026-KA882',
-  email: 'pratham.shetty@ajiet.ac.in',
+  religion: '',
+  caste: '',
+  category: '',
+  aadhaarNumber: '',
+  sslcPercentage: '',
+  pucPcmPercentage: '',
+  pucTotalPercentage: '',
+  studiedKannadaInSSLC: '',
+  studentSsid: '',
+  email: '',
   mobileCountryCode: '+91',
-  mobile: '9876543210',
-  state: 'Karnataka',
-  district: 'Dakshina Kannada',
-  city: 'Mangaluru',
-  addressLine1: '#402, Kadri Hills, Kottara Chowki, Mangaluru',
-  pincode: '575006',
-  fatherName: 'Ravindra Shetty',
-  fatherOccupation: 'Civil Contractor / Business',
+  mobile: '',
+  state: '',
+  district: '',
+  city: '',
+  addressLine1: '',
+  pincode: '',
+  fatherName: '',
+  fatherOccupation: '',
   fatherMobileCountryCode: '+91',
-  fatherMobile: '9845012345',
-  motherName: 'Sujatha R. Shetty',
-  motherOccupation: 'Homemaker',
+  fatherMobile: '',
+  motherName: '',
+  motherOccupation: '',
   motherMobileCountryCode: '+91',
-  motherMobile: '9845067890',
+  motherMobile: '',
   declarationAccepted: true
 };
 
-export default function StudentDashboard({ onLogout = () => {}, currentUser = null }) {
+export default function StudentDashboard({ onLogout = () => { }, currentUser = null }) {
   const [activeTab, setActiveTab] = useState('profile'); // 'profile' | 'academics' | 'extracurricular'
+
+  // ── Academics / Grade Ledger State ──────────────────────────────────────────
+  const [selectedSemester, setSelectedSemester] = useState(null);
+  const [academicData, setAcademicData] = useState(null);
+  const [gradesLoading, setGradesLoading] = useState(false);
+  const [gradesError, setGradesError] = useState(null);
   // Default sidebar closed on mobile (< 768px), open on desktop
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
 
   // Live institutional clock and date
   useEffect(() => {
@@ -93,34 +106,107 @@ export default function StudentDashboard({ onLogout = () => {}, currentUser = nu
     return () => clearInterval(timer);
   }, []);
 
-  // Retrieve student profile from session storage if registered, prioritizing registered student's actual name
-  const [studentData] = useState(() => {
-    try {
-      const savedSession = sessionStorage.getItem('ajiet_student_registration_session');
-      if (savedSession) {
-        const parsed = JSON.parse(savedSession);
-        const registeredFullName = parsed.fullName?.trim();
-        return {
-          ...DEFAULT_STUDENT_PROFILE,
-          ...parsed,
-          fullName: registeredFullName || (currentUser?.name && !currentUser.name.startsWith('Student (') ? currentUser.name : DEFAULT_STUDENT_PROFILE.fullName),
-          usn: parsed.usn || currentUser?.username || DEFAULT_STUDENT_PROFILE.usn,
-          email: parsed.email || currentUser?.email || DEFAULT_STUDENT_PROFILE.email,
-          branch: parsed.branch || currentUser?.branch || DEFAULT_STUDENT_PROFILE.branch
-        };
-      }
-    } catch (e) {
-      console.warn('Session read error:', e);
-    }
-
+  // Initialize student profile strictly from currentUser auth session, no fake mock identities
+  const [studentData, setStudentData] = useState(() => {
     return {
-      ...DEFAULT_STUDENT_PROFILE,
-      fullName: (currentUser?.name && !currentUser.name.startsWith('Student (')) ? currentUser.name : DEFAULT_STUDENT_PROFILE.fullName,
-      usn: currentUser?.username || DEFAULT_STUDENT_PROFILE.usn,
-      email: currentUser?.email || DEFAULT_STUDENT_PROFILE.email,
-      branch: currentUser?.branch || DEFAULT_STUDENT_PROFILE.branch
+      ...EMPTY_STUDENT_PROFILE,
+      fullName: (currentUser?.name && !currentUser.name.startsWith('Student (')) ? currentUser.name : '',
+      usn: currentUser?.username || '',
+      email: currentUser?.email || '',
+      branch: currentUser?.branch || '',
+      section: currentUser?.section || ''
     };
   });
+
+  // Fetch live database record from MySQL if logged in with JWT token
+  useEffect(() => {
+    const token = currentUser?.token || localStorage.getItem('ajiet_auth_token');
+    if (!token) {
+      setIsLoadingProfile(false);
+      return;
+    }
+
+    setIsLoadingProfile(true);
+    getProfileApi(token)
+      .then((dbProfile) => {
+        if (!dbProfile) return;
+        setStudentData((prev) => ({
+          ...prev,
+          programType: dbProfile.program_type || prev.programType,
+          admissionQuota: dbProfile.admission_quota || prev.admissionQuota,
+          usn: dbProfile.usn || prev.usn,
+          branch: dbProfile.branch || prev.branch,
+          section: dbProfile.section || prev.section,
+          enrolledYear: dbProfile.enrolled_year || prev.enrolledYear,
+          fullName: dbProfile.full_name || prev.fullName,
+          dob: dbProfile.dob ? String(dbProfile.dob).split('T')[0] : prev.dob,
+          gender: dbProfile.gender || prev.gender,
+          bloodGroup: dbProfile.blood_group || prev.bloodGroup,
+          mediumOfInstruction: dbProfile.medium_of_instruction || prev.mediumOfInstruction,
+          placeOfStay: dbProfile.place_of_stay || prev.placeOfStay,
+          pgOwnerName: dbProfile.pg_owner_name || prev.pgOwnerName,
+          pgAddress: dbProfile.pg_address || prev.pgAddress,
+          pgContactCountryCode: dbProfile.pg_contact_country_code || prev.pgContactCountryCode,
+          pgContactNumber: dbProfile.pg_contact_number || prev.pgContactNumber,
+          religion: dbProfile.religion || prev.religion,
+          caste: dbProfile.caste || prev.caste,
+          category: dbProfile.category || prev.category,
+          aadhaarNumber: dbProfile.aadhaar_number || prev.aadhaarNumber,
+          sslcPercentage: dbProfile.sslc_percentage ? String(dbProfile.sslc_percentage) : prev.sslcPercentage,
+          pucPcmPercentage: dbProfile.puc_pcm_percentage ? String(dbProfile.puc_pcm_percentage) : prev.pucPcmPercentage,
+          pucTotalPercentage: dbProfile.puc_total_percentage ? String(dbProfile.puc_total_percentage) : prev.pucTotalPercentage,
+          studiedKannadaInSSLC: dbProfile.studied_kannada_in_sslc || prev.studiedKannadaInSSLC,
+          studentSsid: dbProfile.student_ssid || prev.studentSsid,
+          email: dbProfile.email || prev.email,
+          mobileCountryCode: dbProfile.mobile_country_code || prev.mobileCountryCode,
+          mobile: dbProfile.mobile || prev.mobile,
+          state: dbProfile.state || prev.state,
+          district: dbProfile.district || prev.district,
+          city: dbProfile.city || prev.city,
+          addressLine1: dbProfile.address_line1 || prev.addressLine1,
+          pincode: dbProfile.pincode || prev.pincode,
+          fatherName: dbProfile.father_name || prev.fatherName,
+          fatherOccupation: dbProfile.father_occupation || prev.fatherOccupation,
+          fatherMobileCountryCode: dbProfile.father_mobile_country_code || prev.fatherMobileCountryCode,
+          fatherMobile: dbProfile.father_mobile || prev.fatherMobile,
+          motherName: dbProfile.mother_name || prev.motherName,
+          motherOccupation: dbProfile.mother_occupation || prev.motherOccupation,
+          motherMobileCountryCode: dbProfile.mother_mobile_country_code || prev.motherMobileCountryCode,
+          motherMobile: dbProfile.mother_mobile || prev.motherMobile
+        }));
+      })
+      .catch((err) => {
+        console.warn('Failed to load live profile from DB:', err.message);
+      })
+      .finally(() => {
+        setIsLoadingProfile(false);
+      });
+  }, [currentUser]);
+
+  // Fetch grade ledger whenever academics tab is active or semester selection changes
+  useEffect(() => {
+    if (activeTab !== 'academics') return;
+    const usn = studentData.usn || currentUser?.username;
+    if (!usn) return;
+
+    setGradesLoading(true);
+    setGradesError(null);
+    getStudentGradesApi(usn, selectedSemester)
+      .then((data) => {
+        setAcademicData(data);
+        // Auto-select first available semester if none chosen
+        if (!selectedSemester && data.availableSemesters && data.availableSemesters.length > 0) {
+          setSelectedSemester(data.availableSemesters[0]);
+        }
+      })
+      .catch((err) => {
+        setGradesError(err.message || 'Failed to load academic records.');
+      })
+      .finally(() => {
+        setGradesLoading(false);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, selectedSemester, studentData.usn]);
 
   return (
     <div className="student-portal-container">
@@ -558,108 +644,279 @@ export default function StudentDashboard({ onLogout = () => {}, currentUser = nu
           )}
 
           {/* =========================================================
-              VIEW 2: ACADEMICS TAB
+              VIEW 2: ACADEMICS TAB — Premium Grade Ledger
               ========================================================= */}
           {activeTab === 'academics' && (
             <div className="tab-pane-container academics-pane-view">
-              {/* Header Title Banner */}
-              <div className="pane-header-banner">
-                <div className="pane-header-left">
-                  <div className="pane-title-icon-badge academics-icon-badge">
-                    <GraduationCap size={22} />
-                  </div>
-                  <div>
-                    <h2 className="pane-main-title">Academics Workspace</h2>
-                    <p className="pane-main-subtitle">
-                      Curriculum syllabus, subject attendance, internal assessments (IA), and timetable
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Academic Highlights Stat Cards */}
-              <div className="academic-stats-row">
-                <div className="stat-card">
-                  <span className="stat-title">Current Semester</span>
-                  <strong className="stat-number">1st Sem</strong>
-                  <span className="stat-sub">Academic Year 2026-27</span>
+              {/* ── Loading State ── */}
+              {gradesLoading && (
+                <div className="grades-loading-wrap">
+                  <Loader2 size={36} className="grades-spinner" />
+                  <p>Fetching academic records from the AJIET ERP server…</p>
                 </div>
-                <div className="stat-card stat-success">
-                  <span className="stat-title">Overall Attendance</span>
-                  <strong className="stat-number">91.4%</strong>
-                  <span className="stat-sub">Minimum Requirement: 85%</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-title">Continuous Evaluation (IA)</span>
-                  <strong className="stat-number">IA-1 Active</strong>
-                  <span className="stat-sub">Next scheduled: 12th Dec</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-title">Credits Registered</span>
-                  <strong className="stat-number">20 Credits</strong>
-                  <span className="stat-sub">VTU 2022 / NEP Scheme</span>
-                </div>
-              </div>
+              )}
 
-              {/* Academic Modules Grid */}
-              <div className="academic-modules-grid">
-                <div className="acad-feature-card">
-                  <div className="feature-icon-box">
-                    <BookOpen size={20} />
-                  </div>
-                  <div className="feature-info">
-                    <h4>Course Files &amp; Syllabus</h4>
-                    <p>Access subject syllabus, lesson plans, lecture notes, and VTU prescribed textbooks.</p>
-                  </div>
+              {/* ── Error State ── */}
+              {!gradesLoading && gradesError && (
+                <div className="grades-error-wrap">
+                  <XCircle size={28} />
+                  <p>{gradesError}</p>
                 </div>
+              )}
 
-                <div className="acad-feature-card">
-                  <div className="feature-icon-box">
-                    <TrendingUp size={20} />
-                  </div>
-                  <div className="feature-info">
-                    <h4>Internal Assessment (IA) Scores</h4>
-                    <p>View test scores, assignments, lab continuous evaluations, and improvement tests.</p>
-                  </div>
+              {/* ── No Data ── */}
+              {!gradesLoading && !gradesError && !academicData && (
+                <div className="grades-empty-wrap">
+                  <BookOpen size={44} />
+                  <p>No academic records found. Contact the academic section if this is incorrect.</p>
                 </div>
+              )}
 
-                <div className="acad-feature-card">
-                  <div className="feature-icon-box">
-                    <Calendar size={20} />
-                  </div>
-                  <div className="feature-info">
-                    <h4>Weekly Class Timetable</h4>
-                    <p>Interactive schedule of daily classroom lectures, practical lab batches, and tutorials.</p>
-                  </div>
-                </div>
+              {/* ── MAIN CONTENT ── */}
+              {!gradesLoading && !gradesError && academicData && (() => {
+                const records = academicData.records || [];
+                const summary = academicData.summary || {};
+                const availableSems = academicData.availableSemesters || [];
+                const hasBacklog = records.some(r => r.grade_letter === 'F');
 
-                <div className="acad-feature-card">
-                  <div className="feature-icon-box">
-                    <FileSpreadsheet size={20} />
-                  </div>
-                  <div className="feature-info">
-                    <h4>VTU Examination Portal</h4>
-                    <p>University exam applications, hall tickets, timetable, revaluation, and grade cards.</p>
-                  </div>
-                </div>
-              </div>
+                const gradeColor = (letter) => {
+                  if (!letter) return '';
+                  if (letter === 'O' || letter === 'A+') return 'grade-badge-green';
+                  if (letter === 'A' || letter === 'B+') return 'grade-badge-blue';
+                  if (letter === 'B' || letter === 'C' || letter === 'P') return 'grade-badge-amber';
+                  if (letter === 'F') return 'grade-badge-red';
+                  return '';
+                };
 
-              {/* Faculty Mentor Details */}
-              <div className="mentor-assigned-card">
-                <div className="mentor-card-head">
-                  <AlertCircle size={18} />
-                  <h4>Faculty Proctor / Mentor Assigned</h4>
-                </div>
-                <p>
-                  For academic counseling, leave approvals, or grievance redressing, consult your assigned department
-                  mentor:
-                </p>
-                <div className="mentor-data-strip">
-                  <span>Mentor: <strong>Prof. Suresh Nair (Assistant Professor, Dept of CS)</strong></span>
-                  <span>Cabin: <strong>Admin Block, Room #304</strong></span>
-                  <span>Contact: <strong>suresh.ise@ajiet.ac.in</strong></span>
-                </div>
-              </div>
+                return (
+                  <>
+                    {/* ── Identity Strip / Page Header ── */}
+                    <div className="gl-identity-strip">
+                      <div className="gl-identity-left">
+                        <p className="gl-identity-title">Academic Grade Ledger</p>
+                        <p className="gl-identity-sub">
+                          A.J. Institute of Engineering &amp; Technology, Mangaluru &nbsp;•&nbsp;
+                          Dept of Electronics &amp; Communication Engg. (EC) &nbsp;•&nbsp;
+                          VTU 2022 Scheme (NEP)
+                        </p>
+                      </div>
+                      <div className="gl-identity-badges">
+                        <span className="gl-badge">
+                          <GraduationCap size={13} /> {studentData.usn || currentUser?.username}
+                        </span>
+                        <span className="gl-badge gl-badge-accent">
+                          <Award size={13} /> Academic Year 2026–27
+                        </span>
+                        <span className="gl-badge">
+                          {studentData.section || 'A'} &nbsp;|&nbsp; Batch {studentData.enrolledYear || '2025'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ── KPI Cards ── */}
+                    <div className="grades-kpi-row">
+                      {/* SGPA */}
+                      <div className="grades-kpi-card kpi-card-primary">
+                        <div className="kpi-icon-row">
+                          <span className="kpi-label">SGPA</span>
+                          <div className="kpi-icon-box kpi-icon-navy">
+                            <TrendingUp size={16} />
+                          </div>
+                        </div>
+                        <span className="kpi-value kpi-primary">
+                          {summary.sgpa != null ? Number(summary.sgpa).toFixed(2) : '—'}
+                        </span>
+                        <span className="kpi-sub">Out of 10.00 Grade Points</span>
+                      </div>
+
+                      {/* Avg Attendance */}
+                      <div className={`grades-kpi-card ${(summary.avgAttendance || 0) >= 85 ? 'kpi-card-success' : 'kpi-card-danger'}`}>
+                        <div className="kpi-icon-row">
+                          <span className="kpi-label">Avg Attendance</span>
+                          <div className={`kpi-icon-box ${(summary.avgAttendance || 0) >= 85 ? 'kpi-icon-green' : 'kpi-icon-red'}`}>
+                            <Calendar size={16} />
+                          </div>
+                        </div>
+                        <span className={`kpi-value ${(summary.avgAttendance || 0) >= 85 ? 'kpi-success' : 'kpi-danger'}`}>
+                          {summary.avgAttendance != null ? `${Number(summary.avgAttendance).toFixed(1)}%` : '—'}
+                        </span>
+                        <span className="kpi-sub">Min. Requirement: 85%</span>
+                      </div>
+
+                      {/* Total Credits */}
+                      <div className="grades-kpi-card kpi-card-info">
+                        <div className="kpi-icon-row">
+                          <span className="kpi-label">Total Credits</span>
+                          <div className="kpi-icon-box kpi-icon-blue">
+                            <BookOpen size={16} />
+                          </div>
+                        </div>
+                        <span className="kpi-value kpi-neutral">
+                          {summary.totalCredits ?? '—'}
+                        </span>
+                        <span className="kpi-sub">Registered this semester</span>
+                      </div>
+
+                      {/* Result Status */}
+                      <div className={`grades-kpi-card ${hasBacklog ? 'kpi-card-danger' : 'kpi-card-pass'}`}>
+                        <div className="kpi-icon-row">
+                          <span className="kpi-label">Result Status</span>
+                          <div className={`kpi-icon-box ${hasBacklog ? 'kpi-icon-red' : 'kpi-icon-green'}`}>
+                            {hasBacklog ? <XCircle size={16} /> : <CheckCircle2 size={16} />}
+                          </div>
+                        </div>
+                        <span className={`kpi-value-sm ${hasBacklog ? 'kpi-danger' : 'kpi-success'}`}>
+                          {hasBacklog ? 'BACKLOG' : 'ALL PASS'}
+                        </span>
+                        <span className="kpi-sub">
+                          {hasBacklog ? 'One or more subjects failed' : 'No arrears detected this semester'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ── Semester Dropdown ── */}
+                    <div className="semester-selector-wrap">
+                      <label className="sem-selector-label" htmlFor="sem-dropdown">
+                        Semester:
+                      </label>
+                      <div className="sem-dropdown-container">
+                        <select
+                          id="sem-dropdown"
+                          className="sem-dropdown-select"
+                          value={selectedSemester ?? ''}
+                          onChange={(e) => setSelectedSemester(Number(e.target.value))}
+                        >
+                          {availableSems.map((sem) => (
+                            <option key={sem} value={sem}>
+                              Semester {sem} ({sem === 2 ? '2nd' : sem === 3 ? '3rd' : `${sem}th`} Sem)
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="sem-dropdown-arrow" />
+                      </div>
+                    </div>
+
+                    {/* ── Official VTU Grade Table ── */}
+                    <div className="grade-ledger-wrap">
+                      {/* Dark Header Bar */}
+                      <div className="grade-ledger-title-bar">
+                        <div className="ledger-title-left">
+                          <span className="ledger-dept-label">
+                            Dept. of Electronics &amp; Communication Engineering
+                          </span>
+                        </div>
+                        {/* <div className="ledger-right-pills">
+                          <span className="ledger-pill">USN: {studentData.usn || currentUser?.username}</span>
+                          <span className="ledger-pill ledger-pill-accent">
+                            Semester {selectedSemester} &nbsp;|&nbsp; VTU 2022 Scheme
+                          </span>
+                        </div> */}
+                      </div>
+
+                      {/* Scrollable Table */}
+                      <div className="grade-table-scroll-wrap">
+                        <table className="vtu-grade-table">
+                          <thead>
+                            <tr>
+                              <th rowSpan="2" className="th-num">#</th>
+                              <th rowSpan="2" className="th-code">Subject Code</th>
+                              <th rowSpan="2" className="th-subject">Subjects</th>
+                              <th colSpan="2" className="th-narrow th-group-internal">Internal Marks</th>
+                              <th colSpan="3" className="th-narrow th-group-attendance">Attendance in %</th>
+                              <th rowSpan="2" className="th-narrow">CIE (50)</th>
+                              <th rowSpan="2" className="th-narrow">External (50)</th>
+                              <th rowSpan="2" className="th-narrow">Total (100)</th>
+                              <th rowSpan="2" className="th-narrow">Grade Point</th>
+                              <th rowSpan="2" className="th-narrow">Credit Point</th>
+                              <th rowSpan="2" className="th-narrow">Grade</th>
+                            </tr>
+                            <tr>
+                              <th className="th-narrow th-group-internal">I</th>
+                              <th className="th-narrow th-group-internal">II</th>
+                              <th className="th-narrow th-group-attendance">I</th>
+                              <th className="th-narrow th-group-attendance">II</th>
+                              <th className="th-narrow th-group-attendance">Final</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {records.length === 0 ? (
+                              <tr>
+                                <td colSpan="14" className="td-empty-state">
+                                  No records found for Semester {selectedSemester}.
+                                </td>
+                              </tr>
+                            ) : (
+                              records.map((r, idx) => (
+                                <tr key={r.subject_code || idx} className={r.grade_letter === 'F' ? 'tr-fail' : ''}>
+                                  <td className="td-center td-muted">{idx + 1}</td>
+                                  <td className="td-center">
+                                    <span className="subject-code-badge">{r.subject_code}</span>
+                                  </td>
+                                  <td className="td-subject-name">
+                                    <span className="subject-name-text">{r.subject_name}</span>
+                                    <span className="subject-credits-pill">{r.credits} Credits</span>
+                                  </td>
+                                  <td className="td-center marks-val">{r.internal_marks_1 ?? '—'}</td>
+                                  <td className="td-center marks-val">{r.internal_marks_2 ?? '—'}</td>
+                                  <td className="td-center marks-val">{r.attendance_1 != null ? `${r.attendance_1}%` : '—'}</td>
+                                  <td className="td-center marks-val">{r.attendance_2 != null ? `${r.attendance_2}%` : '—'}</td>
+                                  <td className="td-center">
+                                    <span className={r.final_attendance < 85 ? 'attendance-low' : 'attendance-ok'}>
+                                      {r.final_attendance != null ? `${r.final_attendance}%` : '—'}
+                                    </span>
+                                  </td>
+                                  <td className="td-center marks-val">{r.cie_marks ?? '—'}</td>
+                                  <td className="td-center marks-val">{r.external_marks ?? '—'}</td>
+                                  <td className="td-center">
+                                    <span className="total-marks-val">{r.total_marks ?? '—'}</span>
+                                  </td>
+                                  <td className="td-center grade-point-val">{r.grade_point ?? '—'}</td>
+                                  <td className="td-center credit-point-val">{r.credit_point ?? '—'}</td>
+                                  <td className="td-center">
+                                    <span className={`grade-letter-badge ${gradeColor(r.grade_letter)}`}>
+                                      {r.grade_letter || '—'}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                          {records.length > 0 && (
+                            <tfoot>
+                              <tr className="tfoot-summary-row">
+                                <td colSpan="2" />
+                                <td className="tfoot-label">Semester Totals</td>
+                                <td colSpan="8" />
+                                <td className="td-center">
+                                  <span className="tfoot-pill">Credits: {summary.totalCredits ?? '—'}</span>
+                                </td>
+                                <td className="td-center">
+                                  <span className="tfoot-pill">Cr·Pts: {summary.totalCreditPoints ?? '—'}</span>
+                                </td>
+                                <td className="td-center">
+                                  <span className="tfoot-sgpa-badge">
+                                    SGPA: {summary.sgpa != null ? Number(summary.sgpa).toFixed(2) : '—'}
+                                  </span>
+                                </td>
+                              </tr>
+                            </tfoot>
+                          )}
+                        </table>
+                      </div>
+
+                      {/* Footer note */}
+                      {/* <div className="grade-ledger-footer-note">
+                        <ShieldCheck size={14} />
+                        <span>
+                          This is an official academic record synchronized from the AJIET ERP central database.
+                          For any discrepancies, contact the Academic Section, Admin Block — Block A, AJIET Mangaluru.
+                        </span>
+                      </div> */}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           )}
 
