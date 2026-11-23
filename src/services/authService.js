@@ -321,8 +321,8 @@ export const attemptLogin = (identifier, password, portalCategory, subRole = nul
   }
 
   // First time login check:
-  // If first login is true or if password still matches initial default username
-  const isFirstTime = user.isFirstLogin || user.password === cleanId;
+  // ONLY trigger if isFirstLogin is still true
+  const isFirstTime = Boolean(user.isFirstLogin);
 
   return {
     success: true,
