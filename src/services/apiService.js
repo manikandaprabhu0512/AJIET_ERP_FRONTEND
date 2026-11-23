@@ -138,3 +138,21 @@ export async function getStudentGradesApi(usn, semester = null) {
   if (!res.ok) throw new Error(data.message || 'Failed to fetch student academic records');
   return data;
 }
+
+export async function getStudentActivitiesApi(usn) {
+  const res = await fetch(`${API_BASE_URL}/academic/student-activities/${usn}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch extracurricular activities');
+  return data;
+}
+
+export async function addStudentActivityApi(usn, payload) {
+  const res = await fetch(`${API_BASE_URL}/academic/student-activities/${usn}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to submit extracurricular activity');
+  return data;
+}

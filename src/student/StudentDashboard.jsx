@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './StudentDashboard.css';
 import Header from '../common/Header';
 import Footer from '../common/Footer';
-import { getProfileApi, getStudentGradesApi } from '../services/apiService';
+import { getProfileApi, getStudentGradesApi, getStudentActivitiesApi, addStudentActivityApi } from '../services/apiService';
 import {
   User,
   GraduationCap,
@@ -19,7 +19,13 @@ import {
   XCircle,
   Loader2,
   ClipboardList,
-  ChevronDown
+  ChevronDown,
+  UploadCloud,
+  FileText,
+  Clock,
+  Eye,
+  PlusCircle,
+  Check
 } from 'lucide-react';
 
 // Initial empty profile schema (no fake mock names or numbers)
@@ -76,6 +82,25 @@ export default function StudentDashboard({ onLogout = () => { }, currentUser = n
   const [academicData, setAcademicData] = useState(null);
   const [gradesLoading, setGradesLoading] = useState(false);
   const [gradesError, setGradesError] = useState(null);
+
+  // ── Extracurricular Activities State (Tab 3) ────────────────────────────────
+  const [activitiesData, setActivitiesData] = useState({ eligibleSemesters: [], activities: [] });
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [activitiesError, setActivitiesError] = useState(null);
+  const [activityForm, setActivityForm] = useState({
+    semester: '',
+    category: 'Certifications',
+    otherCategoryTitle: '',
+    title: '',
+    organizer: '',
+    eventDate: '',
+    certificateUrl: '',
+    certificateFileName: ''
+  });
+  const [submittingActivity, setSubmittingActivity] = useState(false);
+  const [activitySubmitMsg, setActivitySubmitMsg] = useState(null);
+  const [previewModalImg, setPreviewModalImg] = useState(null);
+  const [activitySemFilter, setActivitySemFilter] = useState('ALL');
   // Default sidebar closed on mobile (< 768px), open on desktop
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [currentTime, setCurrentTime] = useState('');
@@ -207,6 +232,116 @@ export default function StudentDashboard({ onLogout = () => { }, currentUser = n
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedSemester, studentData.usn]);
+
+  // Fetch extracurricular activities whenever Tab 3 is active
+  useEffect(() => {
+    if (activeTab !== 'extracurricular') return;
+    const usn = studentData.usn || currentUser?.username;
+    if (!usn) return;
+
+    setActivitiesLoading(true);
+    setActivitiesError(null);
+    getStudentActivitiesApi(usn)
+      .then((data) => {
+        setActivitiesData(data);
+        // Default semester in form to current max semester
+        if (data.eligibleSemesters && data.eligibleSemesters.length > 0 && !activityForm.semester) {
+          setActivityForm((prev) => ({
+            ...prev,
+            semester: data.eligibleSemesters[data.eligibleSemesters.length - 1]
+          }));
+        }
+      })
+      .catch((err) => {
+        setActivitiesError(err.message || 'Failed to load extracurricular activities');
+      })
+      .finally(() => {
+        setActivitiesLoading(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, studentData.usn]);
+
+  // Handle Certificate Image Pick and Base64 conversion
+  const handleCertificateFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Certificate file size must be less than 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setActivityForm((prev) => ({
+        ...prev,
+        certificateUrl: reader.result,
+        certificateFileName: file.name
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Submit new extracurricular activity
+  const handleActivitySubmit = async (e) => {
+    e.preventDefault();
+    const usn = studentData.usn || currentUser?.username;
+    if (!usn) return;
+
+    if (!activityForm.semester) {
+      alert('Please select an eligible semester.');
+      return;
+    }
+    if (!activityForm.title.trim()) {
+      alert('Please enter the activity / achievement title.');
+      return;
+    }
+    if (activityForm.category === 'Others' && !activityForm.otherCategoryTitle.trim()) {
+      alert('Please specify the custom category name for "Others".');
+      return;
+    }
+    if (!activityForm.certificateUrl) {
+      alert('Please upload your certificate / proof image.');
+      return;
+    }
+
+    setSubmittingActivity(true);
+    setActivitySubmitMsg(null);
+
+    try {
+      const payload = {
+        semester: Number(activityForm.semester),
+        category: activityForm.category,
+        otherCategoryTitle: activityForm.category === 'Others' ? activityForm.otherCategoryTitle : null,
+        title: activityForm.title,
+        organizer: activityForm.organizer,
+        eventDate: activityForm.eventDate || null,
+        certificateUrl: activityForm.certificateUrl
+      };
+
+      const result = await addStudentActivityApi(usn, payload);
+      setActivitySubmitMsg({ type: 'success', text: result.message || 'Achievement submitted successfully!' });
+
+      // Refresh list
+      const refreshed = await getStudentActivitiesApi(usn);
+      setActivitiesData(refreshed);
+
+      // Reset form fields except semester
+      setActivityForm((prev) => ({
+        ...prev,
+        title: '',
+        organizer: '',
+        eventDate: '',
+        otherCategoryTitle: '',
+        certificateUrl: '',
+        certificateFileName: ''
+      }));
+    } catch (err) {
+      setActivitySubmitMsg({ type: 'error', text: err.message || 'Submission failed' });
+    } finally {
+      setSubmittingActivity(false);
+    }
+  };
 
   return (
     <div className="student-portal-container">
@@ -921,7 +1056,7 @@ export default function StudentDashboard({ onLogout = () => { }, currentUser = n
           )}
 
           {/* =========================================================
-              VIEW 3: EXTRACURRICULAR ACTIVITY TAB
+              VIEW 3: EXTRACURRICULAR ACTIVITY TAB — Upload & Ledger
               ========================================================= */}
           {activeTab === 'extracurricular' && (
             <div className="tab-pane-container extracurricular-pane-view">
@@ -932,84 +1067,369 @@ export default function StudentDashboard({ onLogout = () => { }, currentUser = n
                     <Sparkles size={22} />
                   </div>
                   <div>
-                    <h2 className="pane-main-title">Extracurricular Activity</h2>
+                    <h2 className="pane-main-title">Student Extracurricular &amp; Achievement Portal</h2>
                     <p className="pane-main-subtitle">
-                      Student clubs, collegiate technical fests, athletics, NSS, and VTU AICTE activity points
+                      Upload certifications, publications, sports &amp; workshop credentials for VTU activity verification
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* AICTE Activity Points Tracker */}
-              <div className="activity-points-card">
-                <div className="points-header">
-                  <div>
-                    <span className="points-tag">VTU AICTE Activity Points Tracker</span>
-                    <h3 className="points-title">Mandatory Degree Completion Points</h3>
+              {/* SECTION A: Upload Achievement Form Card */}
+              <section className="profile-section-card extra-form-section">
+                <div className="profile-section-head">
+                  <div className="section-badge-num">01</div>
+                  <div className="section-head-meta">
+                    <h3 className="section-heading-text">Upload New Achievement / Credential</h3>
+                    <p className="section-heading-sub">
+                      Select semester (up to your current enrolled semester), category, and attach certificate proof
+                    </p>
                   </div>
-                  <div className="points-counter">
-                    <span className="earned-points">45</span>
-                    <span className="total-points">/ 100 Points</span>
-                  </div>
-                </div>
-                <div className="points-progress-bar-wrap">
-                  <div className="points-progress-fill" style={{ width: '45%' }}></div>
-                </div>
-                <span className="points-note">
-                  45 points earned through NSS orientation &amp; Coding Club workshops. 55 points remaining for degree requirement.
-                </span>
-              </div>
-
-              {/* Clubs & Activities Categories */}
-              <div className="extracurricular-cards-grid">
-                <div className="club-card">
-                  <div className="club-icon-circle">
-                    <Award size={22} />
-                  </div>
-                  <h4>Technical &amp; Coding Societies</h4>
-                  <p>
-                    AJIET ByteCraft Coding Club, Google Developer Student Club, Robotics &amp; IoT Chapter, and IEEE
-                    Student Branch.
-                  </p>
-                  <span className="club-status-pill">Active Member</span>
                 </div>
 
-                <div className="club-card">
-                  <div className="club-icon-circle">
-                    <Sparkles size={22} />
+                {activitySubmitMsg && (
+                  <div className={`portal-alert-inline ${activitySubmitMsg.type === 'success' ? 'alert-success' : 'alert-error'}`}>
+                    {activitySubmitMsg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    <span>{activitySubmitMsg.text}</span>
                   </div>
-                  <h4>Cultural &amp; Arts Association</h4>
-                  <p>
-                    Music, classical and western dance, theatre &amp; drama troupe, fine arts club, and literary debating
-                    society.
-                  </p>
-                  <span className="club-status-pill enrolled">Annual Fest 'Aakriti'</span>
+                )}
+
+                <form onSubmit={handleActivitySubmit} className="extra-upload-form">
+                  <div className="extra-form-grid">
+                    {/* 1. Semester Dropdown (Option B: Up to current enrolled semester) */}
+                    <div className="form-field-group">
+                      <label className="field-label" htmlFor="act-sem">
+                        Semester <span className="req-star">*</span>
+                      </label>
+                      <div className="custom-select-wrap">
+                        <select
+                          id="act-sem"
+                          className="extra-select-input"
+                          value={activityForm.semester}
+                          onChange={(e) => setActivityForm((prev) => ({ ...prev, semester: e.target.value }))}
+                          required
+                        >
+                          <option value="" disabled>-- Select Eligible Semester --</option>
+                          {activitiesData.eligibleSemesters?.map((sem) => (
+                            <option key={sem} value={sem}>
+                              Semester {sem} ({sem === 2 ? '2nd' : sem === 3 ? '3rd' : `${sem}th`} Sem)
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="select-arrow-icon" />
+                      </div>
+                      <span className="field-hint">
+                        Allowed up to current academic standing (Max Sem {activitiesData.maxSemester || 1})
+                      </span>
+                    </div>
+
+                    {/* 2. Category Dropdown (6 specified categories) */}
+                    <div className="form-field-group">
+                      <label className="field-label" htmlFor="act-cat">
+                        Category <span className="req-star">*</span>
+                      </label>
+                      <div className="custom-select-wrap">
+                        <select
+                          id="act-cat"
+                          className="extra-select-input"
+                          value={activityForm.category}
+                          onChange={(e) => setActivityForm((prev) => ({ ...prev, category: e.target.value }))}
+                          required
+                        >
+                          <option value="Publications">1. Publications (Journals / Conferences)</option>
+                          <option value="Certifications">2. Certifications (NPTEL, Coursera, Global)</option>
+                          <option value="Sports">3. Sports (VTU, Collegiate, Athletics)</option>
+                          <option value="Culturals">4. Culturals (Fest, Arts, Music, Drama)</option>
+                          <option value="Workshop/Training">5. Workshop / Training (Bootcamps, FDP)</option>
+                          <option value="Others">6. Others (Specify Custom Category)</option>
+                        </select>
+                        <ChevronDown size={14} className="select-arrow-icon" />
+                      </div>
+                    </div>
+
+                    {/* 3. Conditional Input for "Others" category */}
+                    {activityForm.category === 'Others' && (
+                      <div className="form-field-group full-row-span">
+                        <label className="field-label" htmlFor="act-other-cat">
+                          Specify Category Name <span className="req-star">*</span>
+                        </label>
+                        <input
+                          id="act-other-cat"
+                          type="text"
+                          className="extra-text-input"
+                          placeholder="e.g. Community Service, NSS Camp, Patent, Entrepreneurship"
+                          value={activityForm.otherCategoryTitle}
+                          onChange={(e) => setActivityForm((prev) => ({ ...prev, otherCategoryTitle: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    )}
+
+                    {/* 4. Activity Title */}
+                    <div className="form-field-group full-row-span">
+                      <label className="field-label" htmlFor="act-title">
+                        Activity / Achievement Title <span className="req-star">*</span>
+                      </label>
+                      <input
+                        id="act-title"
+                        type="text"
+                        className="extra-text-input"
+                        placeholder="e.g. 1st Prize in State Level Robotics Hackathon / NPTEL Elite+Gold in Embedded Systems"
+                        value={activityForm.title}
+                        onChange={(e) => setActivityForm((prev) => ({ ...prev, title: e.target.value }))}
+                        required
+                      />
+                    </div>
+
+                    {/* 5. Organizer / Issuing Authority */}
+                    <div className="form-field-group">
+                      <label className="field-label" htmlFor="act-org">
+                        Organizer / Issuing Organization
+                      </label>
+                      <input
+                        id="act-org"
+                        type="text"
+                        className="extra-text-input"
+                        placeholder="e.g. VTU Belagavi / IIT Madras / IEEE"
+                        value={activityForm.organizer}
+                        onChange={(e) => setActivityForm((prev) => ({ ...prev, organizer: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* 6. Event / Achievement Date */}
+                    <div className="form-field-group">
+                      <label className="field-label" htmlFor="act-date">
+                        Achievement / Issue Date
+                      </label>
+                      <input
+                        id="act-date"
+                        type="date"
+                        className="extra-text-input"
+                        value={activityForm.eventDate}
+                        onChange={(e) => setActivityForm((prev) => ({ ...prev, eventDate: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* 7. Certificate Upload (Image) */}
+                    <div className="form-field-group full-row-span">
+                      <label className="field-label">
+                        Certificate / Proof Document (Image / Scan) <span className="req-star">*</span>
+                      </label>
+                      <div className="cert-dropzone">
+                        <input
+                          type="file"
+                          id="cert-file-input"
+                          accept="image/*,.pdf"
+                          onChange={handleCertificateFileChange}
+                          className="file-hidden-input"
+                        />
+                        <label htmlFor="cert-file-input" className="cert-dropzone-label">
+                          <UploadCloud size={30} className="dropzone-icon" />
+                          <div className="dropzone-text-group">
+                            <strong className="dropzone-title">Click to browse or drag &amp; drop certificate proof</strong>
+                            <span className="dropzone-sub">Supports JPG, PNG, WebP up to 5MB</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      {/* Uploaded File Preview Badge */}
+                      {activityForm.certificateUrl && (
+                        <div className="cert-preview-card">
+                          <img
+                            src={activityForm.certificateUrl}
+                            alt="Certificate Preview"
+                            className="cert-mini-thumb"
+                            onClick={() => setPreviewModalImg(activityForm.certificateUrl)}
+                          />
+                          <div className="cert-file-meta">
+                            <span className="cert-file-name">{activityForm.certificateFileName || 'certificate_proof.jpg'}</span>
+                            <span className="cert-file-status">Ready to submit</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="cert-remove-btn"
+                            onClick={() => setActivityForm((prev) => ({ ...prev, certificateUrl: '', certificateFileName: '' }))}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="form-actions-row">
+                    <button
+                      type="submit"
+                      className="btn-submit-activity"
+                      disabled={submittingActivity}
+                    >
+                      {submittingActivity ? (
+                        <>
+                          <Loader2 size={16} className="spin-btn-icon" />
+                          <span>Uploading Achievement…</span>
+                        </>
+                      ) : (
+                        <>
+                          <PlusCircle size={16} />
+                          <span>Submit Achievement for Verification</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* SECTION B: Submitted Achievements Ledger */}
+              <section className="profile-section-card extra-ledger-section">
+                <div className="profile-section-head">
+                  <div className="section-badge-num">02</div>
+                  <div className="section-head-meta">
+                    <h3 className="section-heading-text">My Verified Extracurricular Records</h3>
+                    <p className="section-heading-sub">
+                      All uploaded achievements and their institutional verification status
+                    </p>
+                  </div>
                 </div>
 
-                <div className="club-card">
-                  <div className="club-icon-circle">
-                    <TrendingUp size={22} />
+                {/* Filter Bar */}
+                <div className="extra-ledger-filter-bar">
+                  <span className="filter-label">Filter by Semester:</span>
+                  <div className="filter-pill-group">
+                    <button
+                      type="button"
+                      className={`filter-pill-btn ${activitySemFilter === 'ALL' ? 'active' : ''}`}
+                      onClick={() => setActivitySemFilter('ALL')}
+                    >
+                      All Semesters
+                    </button>
+                    {activitiesData.eligibleSemesters?.map((sem) => (
+                      <button
+                        key={sem}
+                        type="button"
+                        className={`filter-pill-btn ${activitySemFilter === String(sem) ? 'active' : ''}`}
+                        onClick={() => setActivitySemFilter(String(sem))}
+                      >
+                        Sem {sem}
+                      </button>
+                    ))}
                   </div>
-                  <h4>Sports &amp; Athletics</h4>
-                  <p>
-                    Inter-collegiate VTU sports, Cricket team, Badminton club, Table Tennis, Volleyball, and Annual Sports
-                    Meet.
-                  </p>
-                  <span className="club-status-pill">Intramural Tournaments</span>
                 </div>
 
-                <div className="club-card">
-                  <div className="club-icon-circle">
-                    <ShieldCheck size={22} />
+                {/* Loading state */}
+                {activitiesLoading && (
+                  <div className="grades-loading-wrap">
+                    <Loader2 size={30} className="grades-spinner" />
+                    <p>Loading extracurricular achievements…</p>
                   </div>
-                  <h4>NSS, Youth Red Cross &amp; Eco Club</h4>
-                  <p>
-                    Community development drives, blood donation camps, environmental sustainability workshops, and
-                    social camps.
-                  </p>
-                  <span className="club-status-pill enrolled">20 Points Allocated</span>
+                )}
+
+                {/* Empty State */}
+                {!activitiesLoading && activitiesData.activities?.length === 0 && (
+                  <div className="grades-empty-wrap">
+                    <Award size={40} />
+                    <p>No achievements submitted yet. Use the form above to add your first certificate!</p>
+                  </div>
+                )}
+
+                {/* Records Table */}
+                {!activitiesLoading && activitiesData.activities?.length > 0 && (() => {
+                  const filtered = activitySemFilter === 'ALL'
+                    ? activitiesData.activities
+                    : activitiesData.activities.filter((a) => String(a.semester) === activitySemFilter);
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="grades-empty-wrap">
+                        <Award size={36} />
+                        <p>No records found for Semester {activitySemFilter}.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grade-ledger-wrap extra-table-wrap">
+                      <div className="grade-table-scroll-wrap">
+                        <table className="vtu-grade-table extra-records-table">
+                          <thead>
+                            <tr>
+                              <th className="th-narrow">#</th>
+                              <th className="th-narrow">Semester</th>
+                              <th style={{ minWidth: '150px' }}>Category</th>
+                              <th style={{ minWidth: '220px', textAlign: 'left' }}>Achievement Title</th>
+                              <th style={{ minWidth: '160px' }}>Organized / Issued By</th>
+                              <th className="th-narrow">Date</th>
+                              <th className="th-narrow">Certificate</th>
+                              <th className="th-narrow">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filtered.map((item, idx) => (
+                              <tr key={item.id || idx}>
+                                <td className="td-center td-muted">{idx + 1}</td>
+                                <td className="td-center">
+                                  <span className="sem-tag-pill">Sem {item.semester}</span>
+                                </td>
+                                <td className="td-center">
+                                  <span className="extra-cat-badge">
+                                    {item.category === 'Others' ? (item.other_category_title || 'Others') : item.category}
+                                  </span>
+                                </td>
+                                <td>
+                                  <strong className="extra-record-title">{item.title}</strong>
+                                </td>
+                                <td className="td-center">{item.organizer || '—'}</td>
+                                <td className="td-center">
+                                  {item.event_date ? String(item.event_date).split('T')[0] : '—'}
+                                </td>
+                                <td className="td-center">
+                                  {item.certificate_url ? (
+                                    <button
+                                      type="button"
+                                      className="btn-view-cert"
+                                      onClick={() => setPreviewModalImg(item.certificate_url)}
+                                      title="View Certificate"
+                                    >
+                                      <Eye size={14} />
+                                      <span>View</span>
+                                    </button>
+                                  ) : '—'}
+                                </td>
+                                <td className="td-center">
+                                  <span className={`status-pill-badge status-${(item.status || 'Pending').toLowerCase()}`}>
+                                    {item.status || 'Pending'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </section>
+
+              {/* Certificate Image Lightbox Modal */}
+              {previewModalImg && (
+                <div className="cert-modal-backdrop" onClick={() => setPreviewModalImg(null)}>
+                  <div className="cert-modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className="cert-modal-header">
+                      <h4>Certificate Verification Preview</h4>
+                      <button
+                        type="button"
+                        className="modal-close-icon-btn"
+                        onClick={() => setPreviewModalImg(null)}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="cert-modal-body">
+                      <img src={previewModalImg} alt="Certificate Enlarged" className="cert-full-img" />
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 

@@ -889,10 +889,495 @@
   margin-top: 4px;
 }
 
-.club-status-pill.enrolled {
-  background: #e0e7ff;
-  color: #4338ca;
+/* ============================================================
+   EXTRACURRICULAR ACTIVITY TAB — Professional Upload & Ledger
+   ============================================================ */
+
+.extra-form-section,
+.extra-ledger-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(4, 45, 87, 0.05);
 }
+
+.portal-alert-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.portal-alert-inline.alert-success {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.portal-alert-inline.alert-error {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* ── Upload Form Grid ── */
+.extra-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.extra-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 24px;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field-group.full-row-span {
+  grid-column: 1 / -1;
+}
+
+.field-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.02em;
+}
+
+.req-star {
+  color: #dc2626;
+}
+
+.field-hint {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ── Custom Select Input ── */
+.custom-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.extra-select-input {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 9px 36px 9px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #0f172a;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.extra-select-input:hover {
+  background-color: #ffffff;
+  border-color: #042d57;
+}
+
+.extra-select-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.select-arrow-icon {
+  position: absolute;
+  right: 14px;
+  pointer-events: none;
+  color: #64748b;
+}
+
+/* ── Text Input ── */
+.extra-text-input {
+  width: 100%;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0f172a;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.extra-text-input:hover {
+  background-color: #ffffff;
+  border-color: #042d57;
+}
+
+.extra-text-input:focus {
+  outline: none;
+  background-color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+/* ── Certificate Dropzone ── */
+.file-hidden-input {
+  display: none;
+}
+
+.cert-dropzone-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 20px;
+  border: 2px dashed #94a3b8;
+  border-radius: 10px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cert-dropzone-label:hover {
+  background: #f0f7ff;
+  border-color: #0284c7;
+}
+
+.dropzone-icon {
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.dropzone-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropzone-title {
+  font-size: 0.86rem;
+  color: #0f172a;
+}
+
+.dropzone-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+/* ── Preview Badge ── */
+.cert-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+}
+
+.cert-mini-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+}
+
+.cert-file-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.cert-file-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+.cert-file-status {
+  font-size: 0.7rem;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.cert-remove-btn {
+  background: transparent;
+  border: 1px solid #f87171;
+  color: #dc2626;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cert-remove-btn:hover {
+  background: #fee2e2;
+}
+
+/* ── Form Actions ── */
+.form-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.btn-submit-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #042d57;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(4, 45, 87, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-submit-activity:hover:not(:disabled) {
+  background: #06407b;
+  transform: translateY(-1px);
+}
+
+.btn-submit-activity:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spin-btn-icon {
+  animation: grades-spin 1s linear infinite;
+}
+
+/* ── Filter Bar in Ledger ── */
+.extra-ledger-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.filter-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-pill-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-pill-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.filter-pill-btn:hover {
+  background: #e2e8f0;
+  color: #042d57;
+}
+
+.filter-pill-btn.active {
+  background: #042d57;
+  border-color: #042d57;
+  color: #ffffff;
+}
+
+/* ── Ledger Table Custom Badges ── */
+.extra-table-wrap {
+  margin-top: 8px;
+}
+
+.sem-tag-pill {
+  display: inline-block;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #bfdbfe;
+}
+
+.extra-cat-badge {
+  display: inline-block;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.extra-record-title {
+  color: #042d57;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.btn-view-cert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-view-cert:hover {
+  background: #dbeafe;
+}
+
+/* Status Badges */
+.status-pill-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.status-pill-badge.status-pending {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.status-pill-badge.status-verified {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.status-pill-badge.status-rejected {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* ── Certificate Preview Lightbox Modal ── */
+.cert-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.cert-modal-content {
+  background: #ffffff;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.cert-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: #042d57;
+  color: #ffffff;
+}
+
+.cert-modal-header h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.modal-close-icon-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.modal-close-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.cert-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.cert-full-img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+  .extra-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 
 /* ====================================================
    RESPONSIVE DESIGN BREAKPOINTS
