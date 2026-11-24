@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import './LoginPortal.css';
-import ajietLogo from '../assets/ajiet-logo.png';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import "./LoginPortal.css";
+import ajietLogo from "../assets/ajiet-logo.png";
 import {
   GraduationCap,
   Briefcase,
@@ -14,23 +14,23 @@ import {
   ShieldCheck,
   ArrowRight,
   ArrowLeft,
-  Info
-} from 'lucide-react';
-import OtpModal from './OtpModal';
-import ChangePasswordModal from './ChangePasswordModal';
-import ForgotPasswordModal from './ForgotPasswordModal';
+  Info,
+} from "lucide-react";
+import OtpModal from "./OtpModal";
+import ChangePasswordModal from "./ChangePasswordModal";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 import {
   initMockStore,
   attemptLogin,
   generateRandomOtp,
-  updatePassword
-} from '../services/authService';
-import { loginUserApi, updatePasswordApi } from '../services/apiService';
-import { saveSession } from '../utils/sessionManager';
+  updatePassword,
+} from "../services/authService";
+import { loginUserApi, updatePasswordApi } from "../services/apiService";
+import { saveSession } from "../utils/sessionManager";
 
 const createRandomCaptchaCode = () => {
-  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghkmnpqrstuvwxyz';
-  let code = '';
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghkmnpqrstuvwxyz";
+  let code = "";
   for (let i = 0; i < 4; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -39,26 +39,26 @@ const createRandomCaptchaCode = () => {
 
 export default function LoginPortal({
   selectedRole = {
-    category: 'student',
-    subRole: 'Student',
-    title: 'Student Portal',
-    identifierType: 'USN',
-    exampleId: '4JK26AB123'
+    category: "student",
+    subRole: "Student",
+    title: "Student Portal",
+    identifierType: "USN",
+    exampleId: "4JK26AB123",
   },
   onBackToGateway,
   onLoginSuccess,
-  onStudentSignup
+  onStudentSignup,
 }) {
-  const isStudent = selectedRole.category === 'student';
+  const isStudent = selectedRole.category === "student";
 
   // Input states
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captchaCode, setCaptchaCode] = useState(createRandomCaptchaCode);
-  const [userCaptcha, setUserCaptcha] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [infoMessage, setInfoMessage] = useState('');
+  const [userCaptcha, setUserCaptcha] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
 
   // Flow Modals State
   const [otpModalOpen, setOtpModalOpen] = useState(false);
@@ -67,10 +67,10 @@ export default function LoginPortal({
 
   // Active transaction context
   const [pendingUser, setPendingUser] = useState(null);
-  const [currentOtp, setCurrentOtp] = useState('');
+  const [currentOtp, setCurrentOtp] = useState("");
   const [isForgotRecovery, setIsForgotRecovery] = useState(false);
-  const [selectedDeptRole, setSelectedDeptRole] = useState('HOD');
-  const [selectedInstRole, setSelectedInstRole] = useState('Principal');
+  const [selectedDeptRole, setSelectedDeptRole] = useState("HOD");
+  const [selectedInstRole, setSelectedInstRole] = useState("Principal");
 
   const canvasRef = useRef(null);
 
@@ -78,27 +78,27 @@ export default function LoginPortal({
   const renderCaptchaCanvas = useCallback((code) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
 
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = '#f8fafc';
+    ctx.fillStyle = "#f8fafc";
     ctx.fillRect(0, 0, width, height);
 
     ctx.font = 'bold 24px "SF Pro Text", monospace, sans-serif';
-    ctx.fillStyle = '#042d57';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.fillStyle = "#042d57";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-    const spacedText = code.split('').join('   ');
+    const spacedText = code.split("").join("   ");
     ctx.fillText(spacedText, width / 2, height / 2);
   }, []);
 
   const refreshCaptcha = useCallback(() => {
     const newCode = createRandomCaptchaCode();
     setCaptchaCode(newCode);
-    setUserCaptcha('');
+    setUserCaptcha("");
     renderCaptchaCanvas(newCode);
   }, [renderCaptchaCanvas]);
 
@@ -110,37 +110,42 @@ export default function LoginPortal({
 
   // Quick autofill helper for the current role
   const handleFillDemo = () => {
-    const example = selectedRole.exampleId || (isStudent ? '4JK26AB123' : 'ABCDE12345');
+    const example =
+      selectedRole.exampleId || (isStudent ? "4JK26AB123" : "ABCDE12345");
     setUsername(example);
     setPassword(example);
-    setErrorMessage('');
-    setInfoMessage(`Loaded default credentials for ${selectedRole.subRole} (${example}).`);
+    setErrorMessage("");
+    setInfoMessage(
+      `Loaded default credentials for ${selectedRole.subRole} (${example}).`,
+    );
   };
 
   // Login form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    setErrorMessage('');
-    setInfoMessage('');
+    setErrorMessage("");
+    setInfoMessage("");
 
     const cleanUsername = username.trim().toUpperCase();
     const cleanPassword = password.trim();
 
     if (!cleanUsername) {
       setErrorMessage(
-        isStudent ? 'Please enter your USN.' : `Please enter your Staff ID for ${selectedRole.subRole}.`
+        isStudent
+          ? "Please enter your USN."
+          : `Please enter your Staff ID for ${selectedRole.subRole}.`,
       );
       return;
     }
 
     if (!cleanPassword) {
-      setErrorMessage('Please enter your password.');
+      setErrorMessage("Please enter your password.");
       return;
     }
 
     // Verify Captcha
     if (userCaptcha.trim().toLowerCase() !== captchaCode.toLowerCase()) {
-      setErrorMessage('Invalid captcha code. Please try again.');
+      setErrorMessage("Invalid captcha code. Please try again.");
       refreshCaptcha();
       return;
     }
@@ -169,11 +174,24 @@ export default function LoginPortal({
         }
       })
       .catch((backendErr) => {
-        console.warn('Backend login error, attempting fallback mock auth:', backendErr.message);
+        console.warn(
+          "Backend login error, attempting fallback mock auth:",
+          backendErr.message,
+        );
 
         // Fallback to local service (for mock faculty, admin, or offline accounts)
-        const subRole = selectedRole.category === 'department' ? selectedDeptRole : selectedRole.category === 'institution' ? selectedInstRole : selectedRole.subRole;
-        const result = attemptLogin(cleanUsername, cleanPassword, selectedRole.category, subRole);
+        const subRole =
+          selectedRole.category === "department"
+            ? selectedDeptRole
+            : selectedRole.category === "institution"
+              ? selectedInstRole
+              : selectedRole.subRole;
+        const result = attemptLogin(
+          cleanUsername,
+          cleanPassword,
+          selectedRole.category,
+          subRole,
+        );
 
         if (!result.success) {
           setErrorMessage(backendErr.message || result.error);
@@ -219,7 +237,10 @@ export default function LoginPortal({
       try {
         await updatePasswordApi(pendingUser.username, newPassword);
       } catch (err) {
-        console.warn('Backend updatePassword notice, fallback to local store:', err.message);
+        console.warn(
+          "Backend updatePassword notice, fallback to local store:",
+          err.message,
+        );
       }
 
       // 2. Also keep local store in sync
@@ -229,15 +250,17 @@ export default function LoginPortal({
       if (isForgotRecovery) {
         // Back to login with populated credentials
         setPassword(newPassword);
-        setInfoMessage('Password reset successfully! You can now log in with your new password.');
+        setInfoMessage(
+          "Password reset successfully! You can now log in with your new password.",
+        );
         refreshCaptcha();
         setIsForgotRecovery(false);
       } else {
         // First login finished: enter dashboard
         const finalUser = {
           ...(updated.user || pendingUser),
-          token: pendingUser?.token || localStorage.getItem('ajiet_auth_token'),
-          isFirstLogin: false
+          token: pendingUser?.token || localStorage.getItem("ajiet_auth_token"),
+          isFirstLogin: false,
         };
         if (onLoginSuccess) {
           onLoginSuccess(finalUser);
@@ -249,11 +272,18 @@ export default function LoginPortal({
   // Forgot password initiated
   const handleForgotOtpRequested = ({ identifier, email, otp }) => {
     setForgotModalOpen(false);
-    const subRoleForgot = selectedRole.category === 'department' ? selectedDeptRole : selectedRole.category === 'institution' ? selectedInstRole : selectedRole.subRole;
+    const subRoleForgot =
+      selectedRole.category === "department"
+        ? selectedDeptRole
+        : selectedRole.category === "institution"
+          ? selectedInstRole
+          : selectedRole.subRole;
     setPendingUser({
       username: identifier,
       email: email,
-      role: subRoleForgot?.toLowerCase().replace(/\s+/g, '_') || selectedRole.category
+      role:
+        subRoleForgot?.toLowerCase().replace(/\s+/g, "_") ||
+        selectedRole.category,
     });
     setCurrentOtp(otp);
     setIsForgotRecovery(true);
@@ -263,13 +293,13 @@ export default function LoginPortal({
   // Pick portal icon
   const getPortalIcon = () => {
     switch (selectedRole.category) {
-      case 'student':
+      case "student":
         return <GraduationCap size={18} />;
-      case 'faculty':
+      case "faculty":
         return <Briefcase size={18} />;
-      case 'department':
+      case "department":
         return <Building2 size={18} />;
-      case 'institution':
+      case "institution":
       default:
         return <Landmark size={18} />;
     }
@@ -294,33 +324,30 @@ export default function LoginPortal({
             <p className="brand-college-name">OF ENGINEERING & TECHNOLOGY</p>
             <span className="brand-location">MANGALURU • ESTD 2006</span>
           </div>
+
+          <button
+            type="button"
+            className="brand-change-role-btn"
+            onClick={onBackToGateway}
+            title="Return to Role Selection Gateway"
+          >
+            <ArrowLeft size={16} />
+            <span>Change Role</span>
+          </button>
         </div>
 
         {/* Right Form Panel */}
         <div className="portal-form-panel">
-          {/* Top Bar with "Change Role" Navigation */}
-          <div className="portal-top-nav">
-            <button
-              type="button"
-              className="back-to-gateway-btn"
-              onClick={onBackToGateway}
-              title="Return to Role Selection Gateway"
-            >
-              <ArrowLeft size={16} />
-              <span>Change Role</span>
-            </button>
-          </div>
-
           {/* Form Header */}
           <div className="form-header-area">
             <h2 className="form-title">
               {selectedRole.title || `${selectedRole.subRole} Sign In`}
             </h2>
-            <p className="form-subtitle">
+            {/* <p className="form-subtitle">
               {isStudent
-                ? 'Enter your 10-character USN and password to access your account'
+                ? "Enter your 10-character USN and password to access your account"
                 : `Sign in with your 10-character Staff ID as ${selectedRole.subRole}`}
-            </p>
+            </p> */}
           </div>
 
           {/* Alerts */}
@@ -342,7 +369,7 @@ export default function LoginPortal({
             {/* Username / Identifier */}
             <div className="field-group">
               <label className="field-label">
-                {isStudent ? 'Student USN' : `${selectedRole.subRole} Staff ID`}
+                {isStudent ? "Student USN" : `${selectedRole.subRole} Staff ID`}
               </label>
               <div className="input-box">
                 <span className="input-icon">
@@ -351,7 +378,11 @@ export default function LoginPortal({
                 <input
                   type="text"
                   className="portal-input"
-                  placeholder={isStudent ? 'e.g. 4JK26AB123' : `e.g. ${selectedRole.exampleId || 'ABCDE12345'}`}
+                  placeholder={
+                    isStudent
+                      ? "e.g. 4JK26AB123"
+                      : `e.g. ${selectedRole.exampleId || "ABCDE12345"}`
+                  }
                   maxLength={10}
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toUpperCase())}
@@ -361,8 +392,8 @@ export default function LoginPortal({
               </div>
               <span className="field-hint">
                 {isStudent
-                  ? 'Strictly 10-characters (4JK + Year + Branch + Roll)'
-                  : '10-character institutional Staff Identifier'}
+                  ? "Strictly 10-characters (4JK + Year + Branch + Roll)"
+                  : "10-character institutional Staff Identifier"}
               </span>
             </div>
 
@@ -383,12 +414,12 @@ export default function LoginPortal({
                   <Lock size={18} />
                 </span>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   className="portal-input password"
                   placeholder={
                     isStudent
-                      ? 'Enter Password (USN for 1st login)'
-                      : 'Enter Password (ID for 1st login)'
+                      ? "Enter Password (USN for 1st login)"
+                      : "Enter Password (ID for 1st login)"
                   }
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -407,20 +438,28 @@ export default function LoginPortal({
             </div>
 
             {/* Role selection for Department and Institution */}
-            {(selectedRole.category === 'department' || selectedRole.category === 'institution') && (
+            {(selectedRole.category === "department" ||
+              selectedRole.category === "institution") && (
               <div className="field-group">
                 <label className="field-label">
-                  {selectedRole.category === 'department' ? 'Select Department Role' : 'Select Administrative Role'}
+                  {selectedRole.category === "department"
+                    ? "Select Department Role"
+                    : "Select Administrative Role"}
                 </label>
                 <select
                   className="portal-select"
-                  value={selectedRole.category === 'department' ? selectedDeptRole : selectedInstRole}
+                  value={
+                    selectedRole.category === "department"
+                      ? selectedDeptRole
+                      : selectedInstRole
+                  }
                   onChange={(e) => {
-                    if (selectedRole.category === 'department') setSelectedDeptRole(e.target.value);
+                    if (selectedRole.category === "department")
+                      setSelectedDeptRole(e.target.value);
                     else setSelectedInstRole(e.target.value);
                   }}
                 >
-                  {selectedRole.category === 'department' ? (
+                  {selectedRole.category === "department" ? (
                     <>
                       <option value="HOD">Head of Department (HOD)</option>
                       <option value="Class Advisor">Class Advisor</option>
@@ -436,7 +475,9 @@ export default function LoginPortal({
                       <option value="Dean Admission">Dean Admission</option>
                       <option value="Dean Placements">Dean Placements</option>
                       <option value="OS">OS (Office Superintendent)</option>
-                      <option value="Administration Officer">Administration Officer</option>
+                      <option value="Administration Officer">
+                        Administration Officer
+                      </option>
                       <option value="Accountant">Accountant</option>
                     </>
                   )}
@@ -449,7 +490,12 @@ export default function LoginPortal({
               <label className="field-label">Security Verification</label>
               <div className="captcha-container-row">
                 <div className="captcha-canvas-wrap">
-                  <canvas ref={canvasRef} width={220} height={42} className="captcha-render" />
+                  <canvas
+                    ref={canvasRef}
+                    width={220}
+                    height={42}
+                    className="captcha-render"
+                  />
                 </div>
                 <button
                   type="button"
@@ -461,7 +507,7 @@ export default function LoginPortal({
                   <RotateCw size={18} />
                 </button>
               </div>
-              <div className="input-box" style={{ marginTop: '8px' }}>
+              <div className="input-box" style={{ marginTop: "8px" }}>
                 <input
                   type="text"
                   className="portal-input"
@@ -484,8 +530,12 @@ export default function LoginPortal({
             {/* Student Sign-up link — shown only on the Student portal */}
             {isStudent && onStudentSignup && (
               <p className="portal-signup-hint">
-                New student?{' '}
-                <button type="button" className="portal-signup-link" onClick={onStudentSignup}>
+                New student?{" "}
+                <button
+                  type="button"
+                  className="portal-signup-link"
+                  onClick={onStudentSignup}
+                >
                   Register your account →
                 </button>
               </p>
@@ -495,7 +545,7 @@ export default function LoginPortal({
           {/* Footer note */}
           <div className="portal-form-footer">
             <ShieldCheck size={15} />
-            <span>Official ERP System • A J Institute of Engineering & Technology</span>
+            <span>A J Institute of Engineering & Technology</span>
           </div>
         </div>
       </div>
@@ -509,7 +559,11 @@ export default function LoginPortal({
         expectedOtp={currentOtp}
         onVerifySuccess={handleOtpVerified}
         onResendOtp={handleResendOtp}
-        title={isForgotRecovery ? 'Verify Recovery Code' : 'First-Time Login Verification'}
+        title={
+          isForgotRecovery
+            ? "Verify Recovery Code"
+            : "First-Time Login Verification"
+        }
       />
 
       {/* 2. Mandatory / Reset Change Password Modal */}

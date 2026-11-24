@@ -10,6 +10,8 @@ export default function Footer({
   intercom = 'Ext. 402',
   showNotice = true
 }) {
+  const currentYear = new Date().getFullYear();
+
   return (
     <footer className="erp-system-footer">
       <div className="footer-top-row">
@@ -18,10 +20,17 @@ export default function Footer({
           <span className="footer-sub">
             Enterprise Resource Planning Portal • Developed for Institutional Academic &amp; Administrative Operations
           </span>
+          <span className="footer-line-mobile footer-copyright-mobile">
+            © {currentYear} A. J. Institute of Engineering &amp; Technology, Mangaluru
+          </span>
+          <span className="footer-line-mobile footer-developed-mobile">Developed by AJIET</span>
         </div>
         <div className="footer-col-right">
-          <span className="footer-helpdesk">
+          <span className="footer-helpdesk footer-helpdesk-desktop">
             ERP Helpdesk: <strong>{helpdeskEmail}</strong>
+          </span>
+          <span className="footer-line-mobile footer-helpdesk-mobile">
+            Helpdesk: {helpdeskEmail}
           </span>
           <span className="footer-secure">
             <ShieldCheck size={13} /> Official Secured Institutional Server

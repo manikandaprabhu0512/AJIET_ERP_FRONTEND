@@ -7,7 +7,7 @@
    ==================================================== */
 
 :root {
-  --erp-navy: #042d57;
+  --erp-navy: #000000;
   --erp-navy-dark: #021a35;
   --erp-navy-light: #0d4b8a;
 
@@ -38,9 +38,12 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(3, 27, 52, 0.88), rgba(4, 45, 87, 0.92)),
-    url('../assets/campus.png') center center / cover no-repeat fixed;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background:
+    linear-gradient(135deg, rgba(3, 27, 52, 0.88), rgba(4, 45, 87, 0.92)),
+    url("../assets/campus.png") center center / cover no-repeat fixed;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   color: var(--erp-text-main);
   box-sizing: border-box;
   overflow: hidden;
@@ -112,6 +115,10 @@
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(4, 45, 87, 0.15));
+}
+
+.masthead-mobile-name {
+  display: none;
 }
 
 .masthead-text-col {
@@ -190,7 +197,7 @@
   gap: 5px;
   font-size: clamp(0.7rem, 0.74vw, 0.9rem);
   color: #64748b;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: "SF Mono", Consolas, monospace;
 }
 
 /* Institutional Sub-Band */
@@ -261,7 +268,10 @@
   color: #ffffff;
   font-family: inherit;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
-  transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    filter 0.22s ease;
   text-decoration: none;
   box-sizing: border-box;
   width: 100%;
@@ -270,7 +280,7 @@
 }
 
 .portal-nav-btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -340,7 +350,11 @@
 /* Distinct Portal Colors */
 /* 1. Student Portal - Sapphire Blue */
 .btn-portal-student {
-  background: linear-gradient(135deg, var(--student-blue-start), var(--student-blue-end));
+  background: linear-gradient(
+    135deg,
+    var(--student-blue-start),
+    var(--student-blue-end)
+  );
   box-shadow: 0 10px 24px rgba(2, 132, 199, 0.38);
 }
 
@@ -350,7 +364,11 @@
 
 /* 2. Faculty Portal - Emerald Green */
 .btn-portal-faculty {
-  background: linear-gradient(135deg, var(--faculty-green-start), var(--faculty-green-end));
+  background: linear-gradient(
+    135deg,
+    var(--faculty-green-start),
+    var(--faculty-green-end)
+  );
   box-shadow: 0 10px 24px rgba(5, 150, 105, 0.38);
 }
 
@@ -360,7 +378,11 @@
 
 /* 3. Departmental Portal - Royal Indigo */
 .btn-portal-dept {
-  background: linear-gradient(135deg, var(--dept-indigo-start), var(--dept-indigo-end));
+  background: linear-gradient(
+    135deg,
+    var(--dept-indigo-start),
+    var(--dept-indigo-end)
+  );
   box-shadow: 0 10px 24px rgba(79, 70, 229, 0.38);
 }
 
@@ -370,7 +392,11 @@
 
 /* 4. Institutional Portal - Warm Amber Gold */
 .btn-portal-inst {
-  background: linear-gradient(135deg, var(--inst-amber-start), var(--inst-amber-end));
+  background: linear-gradient(
+    135deg,
+    var(--inst-amber-start),
+    var(--inst-amber-end)
+  );
   box-shadow: 0 10px 24px rgba(217, 119, 6, 0.38);
 }
 
@@ -417,10 +443,66 @@
   .erp-gateway-main {
     padding: 24px 16px;
   }
-
 }
 
 @media (max-width: 640px) {
+  .erp-gateway-page {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .erp-masthead {
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  .masthead-main-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+  }
+
+  .masthead-logo-col {
+    width: 58px;
+    height: 58px;
+    width: auto;
+    gap: 8px;
+  }
+
+  .masthead-logo-img {
+    width: 58px;
+  }
+
+  .masthead-mobile-name {
+    display: inline-block;
+    color: var(--erp-navy);
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+  }
+
+  .masthead-text-col,
+  .erp-portal-subbar {
+    display: none;
+  }
+
+  .masthead-status-col {
+    align-items: flex-end;
+  }
+
+  .system-live-clock {
+    font-size: 0.72rem;
+  }
+
+  .erp-gateway-main {
+    height: 100dvh;
+    flex: 1;
+    padding: 86px 16px 76px;
+  }
+
   .erp-portals-grid {
     grid-template-columns: 1fr; /* 4x1 on Mobile */
     max-width: 100%;

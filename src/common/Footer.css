@@ -81,14 +81,71 @@
   line-height: 1.35;
 }
 
+.footer-copyright-mobile,
+.footer-developed-mobile,
+.footer-helpdesk-mobile,
+.footer-line-mobile {
+  display: none;
+}
+
 @media (max-width: 860px) {
   .footer-top-row {
-    flex-direction: column;
-    text-align: center;
     gap: 8px;
   }
 
   .footer-col-right {
     align-items: center;
   }
+}
+
+@media (max-width: 640px) {
+  .erp-system-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    height: auto;
+    padding: 8px 12px;
+    border-top: 1px solid #cbd5e1;
+  }
+
+  .footer-top-row {
+    display: block;
+    max-width: none;
+    text-align: center;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .footer-col-left {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .footer-org,
+  .footer-sub,
+  .footer-secure,
+  .footer-bottom-notice,
+  .footer-helpdesk-desktop {
+    display: none;
+  }
+
+  .footer-line-mobile {
+    display: block;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    color: #334155;
+  }
+
+  .footer-col-right {
+    display: block;
+    margin-top: 2px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .footer-developed-mobile {
+    color: #64748b;
+  }
+
 }
