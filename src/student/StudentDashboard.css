@@ -1442,7 +1442,8 @@
   /* Main panel always takes full width on mobile */
   .student-portal-main-panel {
     width: 100% !important;
-    padding: 12px 12px 20px 12px;
+    padding: 12px 12px 104px;
+    scroll-padding-bottom: 104px;
   }
 
   /* Profile hero: 2 columns on tablet, 1 on phone */
