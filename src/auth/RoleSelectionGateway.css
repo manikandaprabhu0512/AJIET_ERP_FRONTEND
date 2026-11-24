@@ -39,7 +39,7 @@
   flex-direction: column;
   justify-content: space-between;
   background:
-    linear-gradient(135deg, rgba(3, 27, 52, 0.88), rgba(4, 45, 87, 0.92)),
+    linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)),
     url("../assets/campus.png") center center / cover no-repeat fixed;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
@@ -77,7 +77,7 @@
 /* ====================================================
    1. FLUID INSTITUTIONAL MASTHEAD BANNER
    ==================================================== */
-.erp-masthead {
+/* .erp-masthead {
   position: relative;
   z-index: 2;
   background: rgba(255, 255, 255, 0.96);
@@ -88,6 +88,21 @@
   box-sizing: border-box;
   flex-shrink: 0;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+} */
+
+.erp-masthead {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 2px solid #e2e8f0;
+  width: 95%;
+  box-sizing: border-box;
+  margin: 10px auto 0;
+  flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  border-radius: 80px;
 }
 
 .masthead-main-row {
@@ -136,7 +151,7 @@
 }
 
 .masthead-college-name {
-  font-size: clamp(1.15rem, 1.6vw, 2.1rem);
+  font-size: clamp(1rem, 1.25vw, 1.7rem);
   font-weight: 800;
   color: var(--erp-navy);
   margin: 0;
@@ -202,12 +217,21 @@
 
 /* Institutional Sub-Band */
 .erp-portal-subbar {
+  position: relative;
+  z-index: 2;
   background: linear-gradient(90deg, #042d57, #073a6e, #042d57);
   color: #ffffff;
+  width: 40%;
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
   padding: clamp(5px, 0.8vh, 10px) clamp(16px, 2.5vw, 48px);
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   border-bottom: 2px solid #021a35;
   flex-shrink: 0;
+  visibility: visible;
+  box-sizing: border-box;
+  border-radius: 80px;
 }
 
 .subbar-content {
@@ -249,7 +273,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: clamp(16px, 1.8vw, 28px);
   width: 100%;
-  max-width: clamp(860px, 86vw, 1380px);
+  max-width: min(94vw, 1500px);
   margin: 0 auto;
   box-sizing: border-box;
 }
@@ -260,8 +284,8 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-between;
-  min-height: clamp(160px, 21vh, 220px);
-  padding: clamp(22px, 3vh, 34px) clamp(20px, 2vw, 28px);
+  min-height: clamp(180px, 24vh, 250px);
+  padding: clamp(24px, 3.2vh, 38px) clamp(22px, 2.4vw, 36px);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 12px;
   cursor: pointer;
@@ -455,7 +479,12 @@
   .erp-masthead {
     position: fixed;
     top: 0;
-    left: 0;
+    left: 0%;
+    width: 100%;
+    border-radius: 0%;
+    margin: 0%;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
   }
 
   .masthead-main-row {

@@ -128,11 +128,11 @@ export default function RoleSelectionGateway({ onSelectRole }) {
         </div>
 
         {/* 2. Institutional Sub-Band */}
-        <div className="erp-portal-subbar">
+        {/* <div className="erp-portal-subbar">
           <div className="subbar-content">
             <span className="subbar-title">CENTRAL AUTHENTICATION</span>
           </div>
-        </div>
+        </div> */}
       </header>
 
       {/* 3. Central Working Area: 4 Themed 2-Liner Portal Cards */}

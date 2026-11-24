@@ -62,22 +62,6 @@ const COUNTRY_CODES = [
   { code: "+977", label: "+977 (Nepal)" },
 ];
 
-const MEDIUM_OF_INSTRUCTION = [
-  "English",
-  "Kannada",
-  "Hindi",
-  "Tamil",
-  "Telugu",
-  "Malayalam",
-  "Marathi",
-  "Urdu",
-  "Bengali",
-  "Gujarati",
-  "Konkani",
-  "Tulu",
-  "Other Regional Language",
-];
-
 const CATEGORIES = [
   "General Merit (GM)",
   "Scheduled Caste (SC)",
@@ -125,9 +109,6 @@ const studentSignupZodSchema = z.object({
   bloodGroup: z
     .string()
     .min(1, "Notice: Mandatory field. Blood group is required."),
-  mediumOfInstruction: z
-    .string()
-    .min(1, "Notice: Mandatory field. Medium of instruction is required."),
   placeOfStay: z
     .string()
     .min(1, "Notice: Mandatory field. Place of stay is required."),
@@ -274,7 +255,6 @@ export default function StudentSignup({ onBackToLogin }) {
     dob: "",
     gender: "Male",
     bloodGroup: "O+",
-    mediumOfInstruction: "English",
     placeOfStay: "Day Scholar", // Hostel | Day Scholar | PG | Other
     pgOwnerName: "",
     pgAddress: "",
@@ -493,12 +473,10 @@ export default function StudentSignup({ onBackToLogin }) {
               alt="AJIET Emblem"
               className="masthead-logo-img"
             />
+            <span className="masthead-mobile-name">AJIET</span>
           </div>
 
           <div className="masthead-text-col">
-            <span className="masthead-trust-name">
-              Laxmi Memorial Education Trust (R.)
-            </span>
             <h1 className="masthead-college-name">
               A. J. INSTITUTE OF ENGINEERING & TECHNOLOGY
             </h1>
@@ -513,12 +491,6 @@ export default function StudentSignup({ onBackToLogin }) {
           </div>
 
           <div className="masthead-status-col">
-            <div className="erp-system-badge">
-              <span className="system-status-indicator"></span>
-              <span className="system-status-text">
-                Registration Portal Active
-              </span>
-            </div>
             <div className="system-live-clock">
               <Clock size={13} />
               <span>
@@ -527,19 +499,19 @@ export default function StudentSignup({ onBackToLogin }) {
             </div>
           </div>
         </div>
+      </header>
 
-        {/* 2. Institutional Sub-Band with Navigation Action */}
-        <div className="erp-portal-subbar">
-          <div className="subbar-content signup-subbar-row">
-            <div className="signup-subbar-title-wrap">
-              <GraduationCap size={18} />
-              <span className="subbar-title">
-                ONLINE STUDENT ADMISSIONS & ENROLLMENT PORTAL
-              </span>
-            </div>
+      {/* 2. Institutional Sub-Band with Navigation Action */}
+      <div className="erp-portal-subbar">
+        <div className="subbar-content signup-subbar-row">
+          <div className="signup-subbar-title-wrap">
+            <GraduationCap size={18} />
+            <span className="subbar-title">
+              ONLINE STUDENT ADMISSIONS & ENROLLMENT PORTAL
+            </span>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* 2. Main Body Container */}
       <main className="signup-main-content">
@@ -835,26 +807,6 @@ export default function StudentSignup({ onBackToLogin }) {
                           </option>
                         ),
                       )}
-                    </select>
-                  </div>
-
-                  {/* Medium of Instruction: Kannada, English, and regional languages */}
-                  <div className="form-control-group">
-                    <label className="form-label">
-                      Medium of Instruction{" "}
-                      <span className="text-danger">*</span>
-                    </label>
-                    <select
-                      name="mediumOfInstruction"
-                      className="form-select"
-                      value={formData.mediumOfInstruction}
-                      onChange={handleInputChange}
-                    >
-                      {MEDIUM_OF_INSTRUCTION.map((lang) => (
-                        <option key={lang} value={lang}>
-                          {lang}
-                        </option>
-                      ))}
                     </select>
                   </div>
 
@@ -1808,14 +1760,6 @@ export default function StudentSignup({ onBackToLogin }) {
                   <span className="preview-field-label">Blood Group</span>
                   <strong className="preview-field-val">
                     {formData.bloodGroup}
-                  </strong>
-                </div>
-                <div className="preview-field-cell">
-                  <span className="preview-field-label">
-                    Medium of Instruction
-                  </span>
-                  <strong className="preview-field-val">
-                    {formData.mediumOfInstruction}
                   </strong>
                 </div>
                 <div className="preview-field-cell">

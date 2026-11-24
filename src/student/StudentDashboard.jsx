@@ -40,7 +40,6 @@ const EMPTY_STUDENT_PROFILE = {
   dob: '',
   gender: '',
   bloodGroup: '',
-  mediumOfInstruction: 'English',
   placeOfStay: '',
   pgOwnerName: '',
   pgAddress: '',
@@ -167,7 +166,6 @@ export default function StudentDashboard({ onLogout = () => { }, currentUser = n
           dob: dbProfile.dob ? String(dbProfile.dob).split('T')[0] : prev.dob,
           gender: dbProfile.gender || prev.gender,
           bloodGroup: dbProfile.blood_group || prev.bloodGroup,
-          mediumOfInstruction: dbProfile.medium_of_instruction || prev.mediumOfInstruction,
           placeOfStay: dbProfile.place_of_stay || prev.placeOfStay,
           pgOwnerName: dbProfile.pg_owner_name || prev.pgOwnerName,
           pgAddress: dbProfile.pg_address || prev.pgAddress,
@@ -607,10 +605,6 @@ export default function StudentDashboard({ onLogout = () => { }, currentUser = n
                   <div className="profile-cell">
                     <span className="cell-label">Blood Group</span>
                     <strong className="cell-value">{studentData.bloodGroup}</strong>
-                  </div>
-                  <div className="profile-cell">
-                    <span className="cell-label">Medium of Instruction</span>
-                    <strong className="cell-value">{studentData.mediumOfInstruction}</strong>
                   </div>
                   <div className="profile-cell">
                     <span className="cell-label">Place of Stay</span>
