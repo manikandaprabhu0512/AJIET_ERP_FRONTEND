@@ -25,7 +25,9 @@
   display: flex;
   flex-direction: column;
   background: var(--faculty-bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   color: var(--faculty-text-main);
   overflow: hidden;
   box-sizing: border-box;
@@ -141,7 +143,7 @@
   font-weight: 800;
   color: var(--faculty-accent);
   letter-spacing: 0.4px;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: "SF Mono", Consolas, monospace;
 }
 
 .sidebar-profile-dept {
@@ -538,8 +540,6 @@
   padding: 1.25rem 1.5rem;
 }
 
-<<<<<<< HEAD
-=======
 .timetable-form {
   padding: 1.25rem;
 }
@@ -945,7 +945,6 @@
   }
 }
 
->>>>>>> origin/feature/faculty-profile
 .erp-card-toolbar {
   padding: 1rem 1.25rem;
   background: #f8fafc;
@@ -1036,7 +1035,10 @@
   font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .achievement-view-btn:hover {
@@ -1126,7 +1128,7 @@
   padding: 0.25rem 0.55rem;
   background: #e2e8f0;
   color: var(--faculty-navy);
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: "SF Mono", Consolas, monospace;
   font-size: 0.82rem;
   font-weight: 800;
   border-radius: 4px;
@@ -1146,7 +1148,8 @@
   margin-top: 1px;
 }
 
-.erp-sem-pill, .erp-sec-pill {
+.erp-sem-pill,
+.erp-sec-pill {
   display: inline-block;
   font-size: 0.76rem;
   font-weight: 700;
@@ -1339,8 +1342,6 @@
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
   }
 }
-<<<<<<< HEAD
-=======
 
 /* ====================================================
    FACULTY OPERATIONS: PROFILE ACHIEVEMENTS,
@@ -1360,7 +1361,9 @@
   font-size: 0.84rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
   box-shadow: 0 1px 3px rgba(4, 45, 87, 0.15);
 }
 
@@ -1552,7 +1555,9 @@
   flex-direction: column;
   justify-content: space-between;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .report-export-card:hover {
@@ -2504,7 +2509,9 @@
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .pub-form-input:focus {
@@ -3462,5 +3469,3 @@
     flex-direction: column;
   }
 }
-
->>>>>>> origin/feature/faculty-profile
