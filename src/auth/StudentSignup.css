@@ -1,0 +1,884 @@
+/* ====================================================
+   AJIET ERP — OFFICIAL STUDENT REGISTRATION PORTAL
+   Full-Page Institutional Academic Onboarding Layout
+   ==================================================== */
+
+@import './RoleSelectionGateway.css';
+
+:root {
+  --erp-navy: #042d57;
+  --erp-navy-dark: #021a35;
+  --erp-navy-light: #0d4b8a;
+  --erp-blue-action: #0284c7;
+  --erp-bg-neutral: #f1f5f9;
+  --erp-card-bg: #ffffff;
+  --erp-border: #cbd5e1;
+  --erp-border-dark: #94a3b8;
+  --erp-text-main: #0f172a;
+  --erp-text-muted: #475569;
+  --erp-text-sub: #64748b;
+  --erp-error: #dc2626;
+  --erp-success: #16a34a;
+}
+
+/* Master Full-Page Layout Container */
+.signup-page-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #f4f6fa;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--erp-text-main);
+  box-sizing: border-box;
+}
+
+/* Sub-band custom styling for Signup */
+.signup-subbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 96vw;
+  margin: 0 auto;
+}
+
+.signup-subbar-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #ffffff;
+}
+
+.subbar-return-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.subbar-return-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: #ffffff;
+}
+
+/* Main Content Area */
+.signup-main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 24px 60px 24px;
+  box-sizing: border-box;
+}
+
+.signup-form-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Intro & Instructions Hero Banner */
+.signup-intro-banner {
+  background: #ffffff;
+  border: 1px solid var(--erp-border);
+  border-left: 5px solid var(--erp-navy);
+  border-radius: 6px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.intro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e0effe;
+  color: var(--erp-navy);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.intro-title {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: var(--erp-navy);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
+}
+
+.intro-description {
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--erp-text-muted);
+  margin: 0 0 16px 0;
+  max-width: 980px;
+}
+
+.intro-instructions-box {
+  background: #f8fafc;
+  border: 1px dashed var(--erp-border-dark);
+  border-radius: 4px;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.instruction-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--erp-text-main);
+}
+
+.step-num {
+  width: 20px;
+  height: 20px;
+  background: var(--erp-navy);
+  color: #ffffff;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.text-danger {
+  color: var(--erp-error);
+}
+
+.text-link-inline {
+  background: none;
+  border: none;
+  color: var(--erp-blue-action);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+/* Sections */
+.signup-actual-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.form-card-section {
+  background: #ffffff;
+  border: 1px solid var(--erp-border);
+  border-radius: 6px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.section-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.section-badge-num {
+  background: var(--erp-navy);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.section-header-text {
+  flex: 1;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--erp-navy);
+}
+
+.section-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 0.82rem;
+  color: var(--erp-text-sub);
+}
+
+/* Form Grids */
+.form-grid-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px 20px;
+}
+
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px 20px;
+}
+
+.grid-span-2 {
+  grid-column: span 2;
+}
+
+.grid-span-3 {
+  grid-column: span 3;
+}
+
+/* PG / Accommodation Conditional Box */
+.pg-accommodation-card {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid var(--erp-navy);
+  border-radius: 6px;
+  padding: 16px 20px;
+  margin-top: 4px;
+}
+
+.pg-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--erp-navy);
+}
+
+.required-tag {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fee2e2;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Control Groups */
+.form-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-icon {
+  position: absolute;
+  left: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  color: var(--erp-text-main);
+  background: #ffffff;
+  border: 1px solid var(--erp-border-dark);
+  border-radius: 4px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.form-input.has-icon {
+  padding-left: 38px;
+}
+
+.form-input:focus {
+  border-color: var(--erp-navy);
+  box-shadow: 0 0 0 2px rgba(4, 45, 87, 0.12);
+}
+
+.form-input.has-error {
+  border-color: var(--erp-error) !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
+}
+
+.form-select.has-error {
+  border-color: var(--erp-error) !important;
+  background-color: #fff5f5 !important;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Phone Number Country Code + Input Combo */
+.phone-input-combo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.country-code-select {
+  width: 105px;
+  flex-shrink: 0;
+  padding: 10px 24px 10px 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--erp-navy);
+  background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 8px center;
+  background-size: 14px;
+  border: 1px solid var(--erp-border-dark);
+  border-radius: 4px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.country-code-select:focus {
+  border-color: var(--erp-navy);
+  box-shadow: 0 0 0 2px rgba(4, 45, 87, 0.12);
+}
+
+.phone-input-combo .input-with-icon {
+  flex: 1;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  font-size: 0.92rem;
+  color: var(--erp-text-main);
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+  background-size: 16px;
+  border: 1px solid var(--erp-border-dark);
+  border-radius: 4px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.form-select:focus {
+  border-color: var(--erp-navy);
+  box-shadow: 0 0 0 2px rgba(4, 45, 87, 0.12);
+}
+
+.form-hint {
+  font-size: 0.72rem;
+  color: var(--erp-text-sub);
+}
+
+.error-text {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--erp-error);
+}
+
+.block-error {
+  display: block;
+  margin-top: 6px;
+}
+
+/* Declaration Box */
+.declaration-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 18px 20px;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.declaration-box.declaration-box-invalid {
+  border: 1.5px solid #dc2626 !important;
+  background: #fff8f8;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+}
+
+.declaration-scroll-content {
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #334155;
+  padding-right: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 12px;
+}
+
+.declaration-scroll-content ol {
+  margin: 6px 0 0 0;
+  padding-left: 20px;
+}
+
+.declaration-scroll-content li {
+  margin-bottom: 6px;
+}
+
+.declaration-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.declaration-checkbox-row.checkbox-row-invalid {
+  background: #fee2e2;
+  border: 1px solid #f87171;
+}
+
+.declaration-checkbox-row.checkbox-row-invalid .checkbox-label-text {
+  color: #991b1b;
+}
+
+.form-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--erp-navy);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.form-checkbox.input-invalid {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+.checkbox-label-text {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--erp-text-main);
+}
+
+/* Action Toolbar */
+.form-action-toolbar {
+  background: #ffffff;
+  border: 1px solid var(--erp-border);
+  border-radius: 6px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 8px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  color: var(--erp-navy);
+  padding: 11px 18px;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+  color: var(--erp-navy-dark);
+}
+
+.btn-tertiary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--erp-text-sub);
+  padding: 11px 16px;
+  border-radius: 4px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-tertiary:hover {
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.btn-primary-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--erp-navy);
+  border: 1px solid var(--erp-navy-dark);
+  color: #ffffff;
+  padding: 12px 28px;
+  border-radius: 4px;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(4, 45, 87, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-primary-submit:hover {
+  background: var(--erp-navy-dark);
+  box-shadow: 0 4px 12px rgba(4, 45, 87, 0.3);
+}
+
+/* ====================================================
+   STEP 2: PREVIEW MODE STYLES
+   ==================================================== */
+.signup-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.preview-intro-banner {
+  background: #ffffff;
+  border: 1px solid var(--erp-border);
+  border-left: 4px solid var(--erp-navy);
+  border-radius: 6px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.preview-badge-pill {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+}
+
+.preview-main-title {
+  margin: 0 0 8px 0;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--erp-navy);
+}
+
+.preview-description {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--erp-text-muted);
+  line-height: 1.55;
+}
+
+.preview-card-section {
+  background: #ffffff;
+}
+
+.preview-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 24px;
+  padding-top: 4px;
+}
+
+.preview-field-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.preview-field-full {
+  grid-column: 1 / -1;
+}
+
+.preview-field-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--erp-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.preview-field-val {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: var(--erp-text-main);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.usn-badge-text {
+  color: var(--erp-navy);
+  letter-spacing: 0.5px;
+  font-family: 'SF Mono', Consolas, monospace;
+  font-weight: 800;
+}
+
+.preview-declaration-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 14px 18px;
+  color: #166534;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.declaration-status-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.preview-toolbar {
+  margin-top: 10px;
+}
+
+/* ====================================================
+   STEP 3: SUCCESS CONFIRMATION (NO REFERENCE NUMBER)
+   ==================================================== */
+.signup-success-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+
+.success-slip-card {
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 44px 40px 36px;
+  box-shadow: 0 8px 36px rgba(4, 45, 87, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Top success banner */
+.slip-top-banner {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 24px;
+}
+
+.slip-success-badge {
+  color: #16a34a;
+}
+
+.slip-main-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--erp-navy);
+}
+
+.slip-main-sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--erp-text-muted);
+  line-height: 1.5;
+}
+
+/* Quick review row */
+.slip-review-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 28px;
+}
+
+.slip-review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.slip-review-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--erp-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.slip-review-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--erp-text-main);
+  word-break: break-all;
+}
+
+/* Action row */
+.slip-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slip-login-btn {
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-size: 1rem;
+}
+
+/* ====================================================
+   RESPONSIVE DESIGN BREAKPOINTS
+   ==================================================== */
+@media (max-width: 960px) {
+  .form-grid-3col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-span-2,
+  .grid-span-3 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 720px) {
+  .signup-main-content {
+    padding: 16px 12px 40px 12px;
+  }
+
+  .form-card-section {
+    padding: 18px 16px;
+  }
+
+  .form-grid-3col,
+  .form-grid-2col,
+  .preview-grid-2col,
+  .slip-review-row {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-span-2,
+  .grid-span-3 {
+    grid-column: span 1;
+  }
+
+  .intro-title {
+    font-size: 1.3rem;
+  }
+
+  .form-action-toolbar {
+    flex-direction: column-reverse;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    width: 100%;
+    display: flex;
+    justify-content: stretch;
+  }
+
+  .toolbar-left button,
+  .toolbar-right button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .slip-actions-row {
+    justify-content: stretch;
+  }
+
+  .slip-login-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .success-slip-card {
+    padding: 28px 16px;
+  }
+}
+
+/* Print Optimization */
+@media print {
+
+  .erp-masthead,
+  .erp-system-footer,
+  .slip-actions-row,
+  .subbar-return-btn {
+    display: none !important;
+  }
+
+  .signup-page-container {
+    background: #ffffff !important;
+    padding: 0 !important;
+  }
+
+  .success-slip-card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+}

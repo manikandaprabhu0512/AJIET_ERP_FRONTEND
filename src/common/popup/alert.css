@@ -1,0 +1,195 @@
+/* ====================================================
+   AJIET ERP Alert Popup Styles
+   ==================================================== */
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: alertFadeIn 0.2s ease-out;
+  font-family: 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+@keyframes alertFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.popup-modal.alert-modal {
+  position: relative;
+  background: #ffffff;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 420px;
+  padding: 24px 22px 20px 22px;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.22), 0 4px 14px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  animation: alertScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes alertScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-right: 30px;
+}
+
+.icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icon-badge-success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.icon-badge-danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+
+.icon-badge-warning {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.icon-badge-info {
+  background: #f0f9ff;
+  color: #0284c7;
+  border: 1px solid #e0f2fe;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-message {
+  margin: 0;
+  font-size: 0.92rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-alert-ok {
+  background: linear-gradient(135deg, #0a66c2, #042d57);
+  border: none;
+  color: #ffffff;
+  padding: 9px 26px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(10, 102, 194, 0.25);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.btn-alert-ok:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.btn-alert-ok.btn-error {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+}
+
+.btn-alert-ok.btn-warning {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  box-shadow: 0 4px 10px rgba(217, 119, 6, 0.25);
+}
+
+.btn-alert-ok.btn-success {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+}
+
+/* ====================================================
+   Strict Responsiveness for All Screens
+   ==================================================== */
+@media (max-width: 480px) {
+  .popup-backdrop {
+    padding: 12px;
+  }
+
+  .popup-modal.alert-modal {
+    max-width: 100%;
+    border-radius: 12px;
+    padding: 20px 16px 16px 16px;
+  }
+
+  .modal-title {
+    font-size: 1.05rem;
+  }
+
+  .modal-message {
+    font-size: 0.88rem;
+  }
+
+  .btn-alert-ok {
+    width: 100%;
+    padding: 11px 18px;
+  }
+}

@@ -1,0 +1,32 @@
+:root {
+  --primary-gradient: linear-gradient(135deg, #0a66c2, #042d57);
+  --primary-blue: #0a66c2;
+  --primary-dark: #042d57;
+  --primary-hover: #08529c;
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  --border-color: #d1d5db;
+  --bg-page: #f0f4f8;
+  --font-family: 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: inherit;
+}

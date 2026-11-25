@@ -1,0 +1,662 @@
+/* ====================================================
+   AJIET ERP LOGIN PORTAL STYLING
+   Official Institutional Enterprise Portal Stylesheet
+   Full Responsiveness: Mobile, Tablet, Laptop, Desktop, 4K
+   ==================================================== */
+
+:root {
+  --erp-navy: #042d57;
+  --erp-navy-dark: #021a35;
+  --erp-navy-light: #0d4b8a;
+  --erp-blue-action: #0284c7;
+  --erp-bg-neutral: #f1f5f9;
+  --erp-card-bg: #ffffff;
+  --erp-border: #cbd5e1;
+  --erp-border-dark: #94a3b8;
+  --erp-text-main: #0f172a;
+  --erp-text-muted: #475569;
+  --erp-text-sub: #64748b;
+}
+
+/* Master Container - College Background */
+.portal-container {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  /* background: linear-gradient(135deg, rgba(6, 45, 87, 0.88), rgba(140, 186, 233, 0.92)), */
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)),
+    url('../assets/campus.png') center center / cover no-repeat fixed;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: var(--erp-text-main);
+  box-sizing: border-box;
+}
+
+/* Remove decorative orbs */
+.bg-glow-orb {
+  display: none;
+}
+
+/* Main Institutional Login Card Shell */
+.portal-card-shell {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 960px;
+  background: #ffffff;
+  border: 1px solid var(--erp-border);
+  border-radius: 40px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ----------------------------------------------------
+   LEFT INSTITUTIONAL BRANDING PANEL
+   ---------------------------------------------------- */
+.portal-brand-panel {
+  flex: 0 0 42%;
+  background: #f8fafc;
+  border-right: 1px solid var(--erp-border);
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.brand-logo-container {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.brand-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brand-text-block {
+  margin-bottom: 20px;
+}
+
+.brand-college-name {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--erp-navy);
+  letter-spacing: 0.5px;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.brand-college-sub {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--erp-navy-light);
+  margin: 4px 0 0 0;
+  letter-spacing: 0.5px;
+}
+
+.brand-location {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--erp-text-sub);
+  text-transform: uppercase;
+}
+
+.brand-change-role-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  color: var(--erp-navy);
+  padding: 7px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.brand-change-role-btn:hover {
+  background: #e2e8f0;
+  color: var(--erp-navy-dark);
+}
+
+.brand-portal-status {
+  background: #ffffff;
+  border: 1px solid var(--erp-border);
+  border-left: 3px solid var(--erp-navy);
+  border-radius: 4px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.portal-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #e0effe;
+  color: var(--erp-navy);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.portal-description {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--erp-text-muted);
+  margin: 0;
+}
+
+/* Quick Assist Helper Box */
+.demo-assist-box {
+  width: 100%;
+  background: #ffffff;
+  border: 1px dashed var(--erp-border-dark);
+  border-radius: 4px;
+  padding: 10px 12px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.demo-assist-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--erp-text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.demo-chips-grid {
+  display: flex;
+}
+
+.demo-chip-btn {
+  width: 100%;
+  background: #f1f5f9;
+  border: 1px solid var(--erp-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  color: #334155;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+}
+
+.demo-chip-btn code {
+  font-weight: 700;
+  color: var(--erp-navy);
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.demo-chip-btn:hover {
+  background: #e2e8f0;
+  border-color: var(--erp-navy);
+}
+
+/* ----------------------------------------------------
+   RIGHT FORM PANEL
+   ---------------------------------------------------- */
+.portal-form-panel {
+  flex: 1;
+  padding: 36px 36px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #e9eef6;
+  box-sizing: border-box;
+}
+
+/* Top Bar with "Change Role" Navigation */
+.portal-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.back-to-gateway-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  color: var(--erp-navy);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.back-to-gateway-btn:hover {
+  background: #e2e8f0;
+  color: var(--erp-navy-dark);
+}
+
+.active-role-chip {
+  display: inline-block;
+  background: #f1f5f9;
+  color: var(--erp-navy);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 1px solid var(--erp-border);
+}
+
+/* Form Header Area */
+.form-header-area {
+  margin-bottom: 16px;
+}
+
+.form-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--erp-navy);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.2px;
+}
+
+.form-subtitle {
+  font-size: 0.86rem;
+  color: var(--erp-text-sub);
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Alerts */
+.portal-alert {
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.84rem;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.35;
+}
+
+.portal-alert.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.portal-alert.info {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+/* Form Fields */
+.portal-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.label-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forgot-link-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--erp-navy-light);
+  cursor: pointer;
+  padding: 0;
+}
+
+.forgot-link-btn:hover {
+  text-decoration: underline;
+  color: var(--erp-navy-dark);
+}
+
+.input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.portal-input {
+  width: 100%;
+  padding: 10px 12px 10px 38px;
+  font-size: 0.92rem;
+  color: #0f172a;
+  background: #ffffff;
+  border: 1px solid var(--erp-border-dark);
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.15s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.portal-input.password {
+  padding-right: 40px;
+}
+
+.portal-input:focus {
+  border-color: var(--erp-navy);
+  box-shadow: 0 0 0 2px rgba(4, 45, 87, 0.12);
+}
+
+/* Role dropdown — matches .portal-input exactly */
+.portal-select {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  font-size: 0.92rem;
+  color: #0f172a;
+  background: #ffffff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background-size: 16px;
+  border: 1px solid var(--erp-border-dark);
+  border-radius: 4px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.portal-select:focus {
+  border-color: var(--erp-navy);
+  box-shadow: 0 0 0 2px rgba(4, 45, 87, 0.12);
+}
+
+.visibility-toggle {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.visibility-toggle:hover {
+  color: var(--erp-navy);
+}
+
+.field-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+/* Captcha Row */
+.captcha-container-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.captcha-canvas-wrap {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  border-radius: 4px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.captcha-render {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.captcha-refresh {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: #f8fafc;
+  border: 1px solid var(--erp-border);
+  color: var(--erp-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.captcha-refresh:hover {
+  background: #e2e8f0;
+}
+
+/* Student sign-up hint below submit */
+.portal-signup-hint {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--erp-text-sub);
+  margin: 2px 0 0 0;
+}
+
+.portal-signup-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--erp-navy-light);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.portal-signup-link:hover {
+  color: var(--erp-navy-dark);
+}
+
+/* Submit Action Button */
+.portal-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--erp-navy);
+  color: #ffffff;
+  border: 1px solid var(--erp-navy-dark);
+  border-radius: 4px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin-top: 4px;
+}
+
+.portal-submit-btn:hover {
+  background: var(--erp-navy-dark);
+}
+
+/* Footer note */
+.portal-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--erp-text-sub);
+  margin-top: 20px;
+  text-align: center;
+}
+
+/* ====================================================
+   RESPONSIVENESS BREAKPOINTS
+   ==================================================== */
+
+/* --- MOBILE DEVICES (< 768px) --- */
+@media (max-width: 768px) {
+  .portal-container {
+    padding: 14px 10px;
+    align-items: flex-start;
+  }
+
+  .portal-card-shell {
+    flex-direction: column;
+    max-width: 460px;
+    margin: auto;
+  }
+
+  .portal-brand-panel {
+    flex: auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-right: none;
+    border-bottom: 1px solid var(--erp-border);
+    text-align: left;
+  }
+
+  .brand-logo-container {
+    width: 58px;
+    height: 58px;
+    margin: 0;
+  }
+
+  .brand-text-block {
+    display: none;
+  }
+
+  .brand-change-role-btn {
+    flex-shrink: 0;
+    padding: 8px 11px;
+  }
+
+  .brand-change-role-btn span {
+    white-space: nowrap;
+  }
+
+  .brand-college-name {
+    font-size: 1.2rem;
+  }
+
+  .brand-college-sub {
+    font-size: 0.82rem;
+  }
+
+  .portal-brand-panel .brand-portal-status {
+    display: none;
+  }
+
+  .portal-form-panel {
+    padding: 24px 18px;
+  }
+
+  .form-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* --- SMALL MOBILES (< 420px) --- */
+@media (max-width: 420px) {
+  .portal-container {
+    padding: 8px;
+  }
+
+  .portal-form-panel {
+    padding: 20px 14px;
+  }
+
+  .portal-input {
+    font-size: 0.88rem;
+    padding: 9px 10px 9px 34px;
+  }
+}
+
+/* --- TABLETS (769px - 1024px) --- */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .portal-card-shell {
+    max-width: 740px;
+  }
+
+  .portal-brand-panel {
+    flex: 0 0 40%;
+    padding: 32px 22px;
+  }
+}
+
+/* --- LARGE SCREENS & DESKTOPS (> 1600px) --- */
+@media (min-width: 1600px) {
+  .portal-card-shell {
+    max-width: 1040px;
+  }
+
+  .portal-brand-panel {
+    padding: 48px 40px;
+  }
+
+  .portal-form-panel {
+    padding: 48px 44px;
+  }
+
+  .form-title {
+    font-size: 1.65rem;
+  }
+}

@@ -1,0 +1,27 @@
+.icon-badge-primary {
+  background: #e0f2fe;
+  color: #0284c7;
+  border: 1px solid #bae6fd;
+}
+
+.btn-confirm-submit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #0a66c2, #042d57);
+  border: none;
+  color: #ffffff;
+  padding: 9px 20px;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(10, 102, 194, 0.25);
+  transition: all 0.2s;
+}
+
+.btn-confirm-submit:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
