@@ -1398,7 +1398,7 @@ export default function StudentDashboard({
                     </h2>
                     <p className="pane-main-subtitle">
                       Upload certifications, publications, sports &amp; workshop
-                      credentials for VTU activity verification
+                      credentials to keep your extracurricular records together
                     </p>
                   </div>
                 </div>
@@ -1688,7 +1688,7 @@ export default function StudentDashboard({
                       ) : (
                         <>
                           <PlusCircle size={16} />
-                          <span>Submit Achievement for Verification</span>
+                          <span>Submit Achievement</span>
                         </>
                       )}
                     </button>
@@ -1702,11 +1702,10 @@ export default function StudentDashboard({
                   <div className="section-badge-num">02</div>
                   <div className="section-head-meta">
                     <h3 className="section-heading-text">
-                      My Verified Extracurricular Records
+                      My Extracurricular Records
                     </h3>
                     <p className="section-heading-sub">
-                      All uploaded achievements and their institutional
-                      verification status
+                      All submitted achievements and their uploaded certificates
                     </p>
                   </div>
                 </div>
@@ -1799,7 +1798,6 @@ export default function StudentDashboard({
                                 </th>
                                 <th className="th-narrow">Date</th>
                                 <th className="th-narrow">Certificate</th>
-                                <th className="th-narrow">Status</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -1852,13 +1850,6 @@ export default function StudentDashboard({
                                       "—"
                                     )}
                                   </td>
-                                  <td className="td-center">
-                                    <span
-                                      className={`status-pill-badge status-${(item.status || "Pending").toLowerCase()}`}
-                                    >
-                                      {item.status || "Pending"}
-                                    </span>
-                                  </td>
                                 </tr>
                               ))}
                             </tbody>
@@ -1880,7 +1871,7 @@ export default function StudentDashboard({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="cert-modal-header">
-                      <h4>Certificate Verification Preview</h4>
+                      <h4>Certificate Preview</h4>
                       <button
                         type="button"
                         className="modal-close-icon-btn"

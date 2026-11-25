@@ -175,6 +175,12 @@ export default function LoginPortal({
         }
       })
       .catch((backendErr) => {
+        if (backendErr.status) {
+          setErrorMessage(backendErr.message);
+          refreshCaptcha();
+          return;
+        }
+
         console.warn(
           "Backend login error, attempting fallback mock auth:",
           backendErr.message,
@@ -234,17 +240,19 @@ export default function LoginPortal({
   // Password successfully updated
   const handlePasswordUpdated = async (newPassword) => {
     if (pendingUser) {
-      // 1. Try updating in backend MySQL database
-      try {
+      if (pendingUser.token) {
         await updatePasswordApi(pendingUser.username, newPassword);
-      } catch (err) {
-        console.warn(
-          "Backend updatePassword notice, fallback to local store:",
-          err.message,
-        );
+      } else {
+        try {
+          await updatePasswordApi(pendingUser.username, newPassword);
+        } catch (err) {
+          console.warn(
+            "Backend password update unavailable; updating mock account:",
+            err.message,
+          );
+        }
       }
 
-      // 2. Also keep local store in sync
       const updated = updatePassword(pendingUser.username, newPassword);
       setChangePassModalOpen(false);
 

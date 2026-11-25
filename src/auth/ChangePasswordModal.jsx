@@ -24,7 +24,7 @@ export default function ChangePasswordModal({
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
   const isDifferentFromDefault = newPassword !== identifier;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -44,14 +44,14 @@ export default function ChangePasswordModal({
     }
 
     setIsSubmitting(true);
-
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await onPasswordChangeSuccess(newPassword);
       setIsSuccess(true);
-      setTimeout(() => {
-        onPasswordChangeSuccess(newPassword);
-      }, 900);
-    }, 500);
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to update password. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
