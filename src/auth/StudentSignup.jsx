@@ -155,6 +155,14 @@ const studentSignupZodSchema = z.object({
       1,
       "Notice: Mandatory field. Please specify if Kannada was studied in SSLC.",
     ),
+  abcId: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (value) => !value || /^\d{12}$/.test(value),
+      "ABC ID must be exactly 12 digits when provided.",
+    ),
   studentSsid: z.string().optional(),
 
   // Contact Details Validation
@@ -270,6 +278,7 @@ export default function StudentSignup({ onBackToLogin }) {
     pucPcmPercentage: "",
     pucTotalPercentage: "",
     studiedKannadaInSSLC: "Yes", // Yes | No
+    abcId: "",
     studentSsid: "",
 
     // 4. Contact Details
@@ -365,6 +374,9 @@ export default function StudentSignup({ onBackToLogin }) {
       val = val.toUpperCase();
     } else if (name === "aadhaarNumber") {
       // Aadhaar: Digits only, max 12 digits
+      val = val.replace(/\D/g, "").slice(0, 12);
+    } else if (name === "abcId") {
+      // ABC ID: Digits only, max 12 digits
       val = val.replace(/\D/g, "").slice(0, 12);
     } else if (
       name === "mobile" ||
@@ -645,7 +657,7 @@ export default function StudentSignup({ onBackToLogin }) {
                   </div>
 
                   {/* Branch / Department Selection */}
-                  <div className="form-control-group grid-span-2">
+                  <div className="form-control-group">
                     <label className="form-label">
                       Department / Branch ({formData.programType}){" "}
                       <span className="text-danger">*</span>
@@ -1149,8 +1161,33 @@ export default function StudentSignup({ onBackToLogin }) {
                     </select>
                   </div>
 
+                  {/* Academic Bank of Credits ID */}
+                  <div className="form-control-group">
+                    <label className="form-label">
+                      ABC ID
+                    </label>
+                    <input
+                      type="text"
+                      name="abcId"
+                      className={`form-input ${touched.abcId && formErrors.abcId ? "has-error" : ""}`}
+                      placeholder="Enter 12-digit ABC ID"
+                      inputMode="numeric"
+                      maxLength={12}
+                      value={formData.abcId}
+                      onChange={handleInputChange}
+                      onBlur={() => handleBlur("abcId")}
+                    />
+                    {touched.abcId && formErrors.abcId ? (
+                      <span className="error-text">⚠️ {formErrors.abcId}</span>
+                    ) : (
+                      <span className="form-hint">
+                        12-digit Academic Bank of Credits identifier
+                      </span>
+                    )}
+                  </div>
+
                   {/* Student SSID number for scholarship */}
-                  <div className="form-control-group grid-span-2">
+                  <div className="form-control-group">
                     <label className="form-label">
                       Student SSID No. (State Scholarship ID / SATS)
                     </label>
@@ -1865,6 +1902,12 @@ export default function StudentSignup({ onBackToLogin }) {
                   </span>
                   <strong className="preview-field-val">
                     {formData.studiedKannadaInSSLC}
+                  </strong>
+                </div>
+                <div className="preview-field-cell">
+                  <span className="preview-field-label">ABC ID</span>
+                  <strong className="preview-field-val">
+                    {formData.abcId || "Not Provided"}
                   </strong>
                 </div>
                 <div className="preview-field-cell">
