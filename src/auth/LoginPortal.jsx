@@ -48,9 +48,10 @@ export default function LoginPortal({
   onBackToGateway,
   onLoginSuccess,
   onStudentSignup,
+  onFacultySignup,
 }) {
   const isStudent = selectedRole.category === "student";
-  const staffIdRoleLabel = selectedRole.subRole.replace(/\s+staff$/i, "");
+  const isFaculty = selectedRole.category === "faculty";
 
   // Input states
   const [username, setUsername] = useState("");
@@ -175,12 +176,6 @@ export default function LoginPortal({
         }
       })
       .catch((backendErr) => {
-        if (backendErr.status) {
-          setErrorMessage(backendErr.message);
-          refreshCaptcha();
-          return;
-        }
-
         console.warn(
           "Backend login error, attempting fallback mock auth:",
           backendErr.message,
@@ -240,19 +235,17 @@ export default function LoginPortal({
   // Password successfully updated
   const handlePasswordUpdated = async (newPassword) => {
     if (pendingUser) {
-      if (pendingUser.token) {
+      // 1. Try updating in backend MySQL database
+      try {
         await updatePasswordApi(pendingUser.username, newPassword);
-      } else {
-        try {
-          await updatePasswordApi(pendingUser.username, newPassword);
-        } catch (err) {
-          console.warn(
-            "Backend password update unavailable; updating mock account:",
-            err.message,
-          );
-        }
+      } catch (err) {
+        console.warn(
+          "Backend updatePassword notice, fallback to local store:",
+          err.message,
+        );
       }
 
+      // 2. Also keep local store in sync
       const updated = updatePassword(pendingUser.username, newPassword);
       setChangePassModalOpen(false);
 
@@ -331,7 +324,7 @@ export default function LoginPortal({
           <div className="brand-text-block">
             <h1 className="brand-college-name">A.J. INSTITUTE</h1>
             <p className="brand-college-name">OF ENGINEERING & TECHNOLOGY</p>
-            <span className="brand-location">MANGALURU • ESTD 2016</span>
+            <span className="brand-location">MANGALURU • ESTD 2006</span>
           </div>
 
           <button
@@ -378,7 +371,7 @@ export default function LoginPortal({
             {/* Username / Identifier */}
             <div className="field-group">
               <label className="field-label">
-                {isStudent ? "Student USN" : `${staffIdRoleLabel} Staff ID`}
+                {isStudent ? "Student USN" : `${selectedRole.subRole} Staff ID`}
               </label>
               <div className="input-box">
                 <span className="input-icon">
@@ -544,6 +537,20 @@ export default function LoginPortal({
                   type="button"
                   className="portal-signup-link"
                   onClick={onStudentSignup}
+                >
+                  Register your account →
+                </button>
+              </p>
+            )}
+
+            {/* Faculty Sign-up link — shown on the Faculty portal */}
+            {isFaculty && (
+              <p className="portal-signup-hint">
+                New faculty?{" "}
+                <button
+                  type="button"
+                  className="portal-signup-link"
+                  onClick={onFacultySignup}
                 >
                   Register your account →
                 </button>

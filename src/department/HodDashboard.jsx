@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import './HodDashboard.css';
-import Header from '../common/Header';
-import Footer from '../common/Footer';
+import React, { useState, useEffect } from "react";
+import "./HodDashboard.css";
+import Header from "../common/Header";
+import Footer from "../common/Footer";
 import {
   getDepartmentOverviewApi,
   getFacultiesApi,
   getSubjectsApi,
   getAllocationsApi,
-  saveAllocationsApi
-} from '../services/apiService';
+  saveAllocationsApi,
+} from "../services/apiService";
 import {
   BookOpen,
   Users,
@@ -22,24 +22,31 @@ import {
   ChevronRight,
   Calendar,
   MessageSquare,
-  ClipboardCheck
-} from 'lucide-react';
+  ClipboardCheck,
+} from "lucide-react";
 
-export default function HodDashboard({ onLogout = () => {}, currentUser = null }) {
-  const [currentTime, setCurrentTime] = useState('');
-  const [currentDate, setCurrentDate] = useState('');
+export default function HodDashboard({
+  onLogout = () => {},
+  currentUser = null,
+}) {
+  const [currentTime, setCurrentTime] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
 
   // Sidebar toggle state (Expanded on desktop, collapsed on mobile)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => window.innerWidth >= 768,
+  );
 
   // Active navigation tab
-  const [activeTab, setActiveTab] = useState('faculties');
+  const [activeTab, setActiveTab] = useState("faculties");
 
   // Department state
-  const deptCode = currentUser?.deptCode || 'EC';
-  const [deptName, setDeptName] = useState(currentUser?.deptName || 'Electronics & Communication Engineering');
+  const deptCode = currentUser?.deptCode || "EC";
+  const [deptName, setDeptName] = useState(
+    currentUser?.deptName || "Electronics & Communication Engineering",
+  );
   const [selectedSemester, setSelectedSemester] = useState(3);
-  const [selectedSection, setSelectedSection] = useState('Section A');
+  const [selectedSection, setSelectedSection] = useState("Section A");
 
   // Data
   const [faculties, setFaculties] = useState([]);
@@ -53,18 +60,18 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
-      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
       const year = now.getFullYear();
       setCurrentDate(`${day}-${month}-${year}`);
 
       let hours = now.getHours();
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
       hours = hours % 12;
       hours = hours ? hours : 12;
-      const formattedHours = String(hours).padStart(2, '0');
+      const formattedHours = String(hours).padStart(2, "0");
       setCurrentTime(`${formattedHours}:${minutes}:${seconds} ${ampm}`);
     };
 
@@ -80,14 +87,14 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
         setLoading(true);
         const [facList, overview] = await Promise.all([
           getFacultiesApi(deptCode),
-          getDepartmentOverviewApi(deptCode)
+          getDepartmentOverviewApi(deptCode),
         ]);
         setFaculties(facList);
         if (overview?.department?.dept_name) {
           setDeptName(overview.department.dept_name);
         }
       } catch (err) {
-        console.error('Failed to load initial HOD data:', err);
+        console.error("Failed to load initial HOD data:", err);
       } finally {
         setLoading(false);
       }
@@ -101,7 +108,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
       try {
         const [subList, allocList] = await Promise.all([
           getSubjectsApi(deptCode, selectedSemester),
-          getAllocationsApi(deptCode, selectedSemester, selectedSection)
+          getAllocationsApi(deptCode, selectedSemester, selectedSection),
         ]);
 
         setSubjects(subList);
@@ -115,7 +122,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
         }
         setAllocations(map);
       } catch (err) {
-        console.error('Failed to load semester subjects/allocations:', err);
+        console.error("Failed to load semester subjects/allocations:", err);
       }
     }
     loadSemesterData();
@@ -125,7 +132,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
   const handleFacultyChange = (subjectCode, facultyId) => {
     setAllocations((prev) => ({
       ...prev,
-      [subjectCode]: facultyId || ''
+      [subjectCode]: facultyId || "",
     }));
     setSaveStatus(null);
   };
@@ -142,7 +149,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
           subject_code: sub.subject_code,
           faculty_id: allocations[sub.subject_code],
           section: selectedSection,
-          academic_year: '2026-27'
+          academic_year: "2026-27",
         }));
 
       await saveAllocationsApi({
@@ -151,21 +158,21 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
         semester: selectedSemester,
         section: selectedSection,
         allocations: allocationItems,
-        assignments: allocationItems
+        assignments: allocationItems,
       });
 
       setSaveStatus({
-        type: 'success',
-        text: `Allocations for Semester ${selectedSemester} (${selectedSection}) committed to database successfully!`
+        type: "success",
+        text: `Allocations for Semester ${selectedSemester} (${selectedSection}) committed to database successfully!`,
       });
 
       // Clear success notification after 4 seconds
       setTimeout(() => setSaveStatus(null), 4000);
     } catch (err) {
-      console.error('Failed to save allocations:', err);
+      console.error("Failed to save allocations:", err);
       setSaveStatus({
-        type: 'error',
-        text: err.message || 'Failed to save subject allocations.'
+        type: "error",
+        text: err.message || "Failed to save subject allocations.",
       });
     } finally {
       setSaving(false);
@@ -174,71 +181,75 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
 
   // Stats calculation
   const totalSubjects = subjects.length;
-  const allocatedCount = subjects.filter((s) => allocations[s.subject_code]).length;
+  const allocatedCount = subjects.filter(
+    (s) => allocations[s.subject_code],
+  ).length;
   const pendingCount = totalSubjects - allocatedCount;
   const sidebarItems = [
     {
-      id: 'faculties',
-      label: 'Faculties List',
-      miniLabel: 'Faculties',
+      id: "faculties",
+      label: "Faculties List",
+      miniLabel: "Faculties",
       subtitle: `${faculties.length} teaching staff`,
-      icon: Users
+      icon: Users,
     },
     {
-      id: 'allocation',
-      label: 'Subject Allotment',
-      miniLabel: 'Allotment',
-      subtitle: 'Assign faculty to subjects',
-      icon: BookOpen
+      id: "allocation",
+      label: "Subject Allotment",
+      miniLabel: "Allotment",
+      subtitle: "Assign faculty to subjects",
+      icon: BookOpen,
     },
     {
-      id: 'attendance',
-      label: 'Attendance',
-      miniLabel: 'Attendance',
-      subtitle: 'Department attendance',
-      icon: Calendar
+      id: "attendance",
+      label: "Attendance",
+      miniLabel: "Attendance",
+      subtitle: "Department attendance",
+      icon: Calendar,
     },
     {
-      id: 'activities',
-      label: 'Other Activities',
-      miniLabel: 'Activities',
-      subtitle: 'Department activities',
-      icon: Sparkles
+      id: "activities",
+      label: "Other Activities",
+      miniLabel: "Activities",
+      subtitle: "Department activities",
+      icon: Sparkles,
     },
     {
-      id: 'message',
-      label: 'Message',
-      miniLabel: 'Message',
-      subtitle: 'Department communication',
-      icon: MessageSquare
+      id: "message",
+      label: "Message",
+      miniLabel: "Message",
+      subtitle: "Department communication",
+      icon: MessageSquare,
     },
     {
-      id: 'approvals',
-      label: 'Approvals',
-      miniLabel: 'Approvals',
-      subtitle: 'Items requiring approval',
-      icon: ClipboardCheck
-    }
+      id: "approvals",
+      label: "Approvals",
+      miniLabel: "Approvals",
+      subtitle: "Items requiring approval",
+      icon: ClipboardCheck,
+    },
   ];
   const placeholderTabs = {
-    attendance: 'Attendance',
-    activities: 'Other Activities',
-    message: 'Message',
-    approvals: 'Approvals'
+    attendance: "Attendance",
+    activities: "Other Activities",
+    message: "Message",
+    approvals: "Approvals",
   };
 
-  const hodName = currentUser?.name || 'Dr. Ravindra K';
-  const hodDesignation = currentUser?.designation || 'Professor & Head of Department';
-  const hodInitials = hodName
-    .replace('Dr.', '')
-    .replace('Prof.', '')
-    .trim()
-    .split(' ')
-    .filter(Boolean)
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase() || 'RK';
+  const hodName = currentUser?.name || "Dr. Ravindra K";
+  const hodDesignation =
+    currentUser?.designation || "Professor & Head of Department";
+  const hodInitials =
+    hodName
+      .replace("Dr.", "")
+      .replace("Prof.", "")
+      .trim()
+      .split(" ")
+      .filter(Boolean)
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "RK";
 
   return (
     <div className="erp-portal-container">
@@ -255,7 +266,9 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
       />
 
       {/* 2. Fullscreen Docked Workspace */}
-      <div className={`erp-portal-workspace ${isSidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
+      <div
+        className={`erp-portal-workspace ${isSidebarOpen ? "sidebar-expanded" : "sidebar-collapsed"}`}
+      >
         {/* Mobile backdrop */}
         {isSidebarOpen && (
           <div
@@ -266,7 +279,9 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
         )}
 
         {/* Docked YouTube-Style Sidebar */}
-        <aside className={`erp-portal-sidebar ${isSidebarOpen ? 'sidebar-open' : 'sidebar-mini'}`}>
+        <aside
+          className={`erp-portal-sidebar ${isSidebarOpen ? "sidebar-open" : "sidebar-mini"}`}
+        >
           {isSidebarOpen ? (
             <>
               {/* Mini HOD Badge Card */}
@@ -276,8 +291,12 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                 </div>
                 <div className="sidebar-profile-meta">
                   <h3 className="sidebar-profile-name">{hodName}</h3>
-                  <span className="sidebar-profile-id">{currentUser?.username || 'HOD_EC'}</span>
-                  <span className="sidebar-profile-dept">Dept. of {deptName}</span>
+                  <span className="sidebar-profile-id">
+                    {currentUser?.username || "HOD_EC"}
+                  </span>
+                  <span className="sidebar-profile-dept">
+                    Dept. of {deptName}
+                  </span>
                   <span className="sidebar-role-pill">Head of Department</span>
                 </div>
               </div>
@@ -289,7 +308,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   <button
                     key={id}
                     type="button"
-                    className={`sidebar-nav-item ${activeTab === id ? 'active' : ''}`}
+                    className={`sidebar-nav-item ${activeTab === id ? "active" : ""}`}
                     onClick={() => setActiveTab(id)}
                   >
                     <div className="nav-item-icon-box">
@@ -317,7 +336,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                 <button
                   key={id}
                   type="button"
-                  className={`sidebar-mini-item ${activeTab === id ? 'active' : ''}`}
+                  className={`sidebar-mini-item ${activeTab === id ? "active" : ""}`}
                   onClick={() => setActiveTab(id)}
                   title={label}
                 >
@@ -349,7 +368,8 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   Department of {deptName} ({deptCode})
                 </h1>
                 <p className="banner-subtitle">
-                  Academic Head: <strong>{hodName}</strong> ({hodDesignation}) • Academic Year: <strong>2026-27</strong>
+                  Academic Head: <strong>{hodName}</strong> ({hodDesignation}) •
+                  Academic Year: <strong>2026-27</strong>
                 </p>
               </div>
             </div>
@@ -367,7 +387,7 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
           </section>
 
           {/* VIEW 1: SUBJECT ALLOCATION TAB */}
-          {activeTab === 'allocation' && (
+          {activeTab === "allocation" && (
             <div className="erp-tab-content">
               {/* 4 Metric Stats */}
               <div className="erp-stats-grid">
@@ -378,7 +398,9 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   <div className="stat-meta">
                     <span className="stat-label">Semester Subjects</span>
                     <strong className="stat-val">{totalSubjects}</strong>
-                    <span className="stat-sub">Semester {selectedSemester} curriculum</span>
+                    <span className="stat-sub">
+                      Semester {selectedSemester} curriculum
+                    </span>
                   </div>
                 </div>
 
@@ -411,7 +433,9 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   <div className="stat-meta">
                     <span className="stat-label">Available Faculty</span>
                     <strong className="stat-val">{faculties.length}</strong>
-                    <span className="stat-sub">Registered department staff</span>
+                    <span className="stat-sub">
+                      Registered department staff
+                    </span>
                   </div>
                 </div>
               </div>
@@ -425,14 +449,14 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                       <span className="segmented-label">Select Semester:</span>
                       <button
                         type="button"
-                        className={`segmented-tab ${selectedSemester === 3 ? 'active' : ''}`}
+                        className={`segmented-tab ${selectedSemester === 3 ? "active" : ""}`}
                         onClick={() => setSelectedSemester(3)}
                       >
                         Semester 3 (3rd Sem)
                       </button>
                       <button
                         type="button"
-                        className={`segmented-tab ${selectedSemester === 4 ? 'active' : ''}`}
+                        className={`segmented-tab ${selectedSemester === 4 ? "active" : ""}`}
                         onClick={() => setSelectedSemester(4)}
                       >
                         Semester 4 (4th Sem)
@@ -440,7 +464,12 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                     </div>
 
                     <div className="section-dropdown-group">
-                      <label htmlFor="section-picker" className="dropdown-label">Section:</label>
+                      <label
+                        htmlFor="section-picker"
+                        className="dropdown-label"
+                      >
+                        Section:
+                      </label>
                       <select
                         id="section-picker"
                         className="erp-select-input"
@@ -454,14 +483,20 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   </div>
 
                   <div className="toolbar-right">
-                    <span className="badge-academic-year">Academic Year: 2026-27</span>
+                    <span className="badge-academic-year">
+                      Academic Year: 2026-27
+                    </span>
                   </div>
                 </div>
 
                 {/* Status Feedback Banner */}
                 {saveStatus && (
                   <div className={`erp-toast-banner ${saveStatus.type}`}>
-                    {saveStatus.type === 'success' ? <CheckCircle2 size={18} /> : <Clock size={18} />}
+                    {saveStatus.type === "success" ? (
+                      <CheckCircle2 size={18} />
+                    ) : (
+                      <Clock size={18} />
+                    )}
                     <span>{saveStatus.text}</span>
                   </div>
                 )}
@@ -471,51 +506,79 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   <table className="erp-data-table">
                     <thead>
                       <tr>
-                        <th style={{ width: '55px' }}>#</th>
-                        <th style={{ width: '130px' }}>Subject Code</th>
+                        <th style={{ width: "55px" }}>#</th>
+                        <th style={{ width: "130px" }}>Subject Code</th>
                         <th>Course Title &amp; Category</th>
-                        <th style={{ width: '110px' }}>Credits</th>
-                        <th style={{ width: '380px' }}>Allocated Subject Teacher</th>
-                        <th style={{ width: '140px' }}>Status</th>
+                        <th style={{ width: "110px" }}>Credits</th>
+                        <th style={{ width: "380px" }}>
+                          Allocated Subject Teacher
+                        </th>
+                        <th style={{ width: "140px" }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {subjects.length === 0 ? (
                         <tr>
                           <td colSpan="6" className="table-empty-notice">
-                            No subjects registered for Semester {selectedSemester}.
+                            No subjects registered for Semester{" "}
+                            {selectedSemester}.
                           </td>
                         </tr>
                       ) : (
                         subjects.map((sub, idx) => {
-                          const currentAssigned = allocations[sub.subject_code] || '';
+                          const currentAssigned =
+                            allocations[sub.subject_code] || "";
                           const isAssigned = Boolean(currentAssigned);
 
                           return (
-                            <tr key={sub.subject_code} className={isAssigned ? 'row-completed' : 'row-pending'}>
+                            <tr
+                              key={sub.subject_code}
+                              className={
+                                isAssigned ? "row-completed" : "row-pending"
+                              }
+                            >
                               <td className="cell-idx">{idx + 1}</td>
                               <td className="cell-code">
-                                <span className="erp-code-pill">{sub.subject_code}</span>
+                                <span className="erp-code-pill">
+                                  {sub.subject_code}
+                                </span>
                               </td>
                               <td className="cell-name">
-                                <span className="subject-title-strong">{sub.subject_name}</span>
+                                <span className="subject-title-strong">
+                                  {sub.subject_name}
+                                </span>
                                 <span className="subject-kind-tag">
-                                  {sub.is_lab ? 'Laboratory / Practical Course' : 'Theory Core Course'}
+                                  {sub.is_lab
+                                    ? "Laboratory / Practical Course"
+                                    : "Theory Core Course"}
                                 </span>
                               </td>
                               <td className="cell-credits">
-                                <span className="erp-credit-badge">{sub.credits} Credits</span>
+                                <span className="erp-credit-badge">
+                                  {sub.credits} Credits
+                                </span>
                               </td>
                               <td className="cell-select">
                                 <select
-                                  className={`faculty-picker-select ${isAssigned ? 'state-assigned' : 'state-unassigned'}`}
+                                  className={`faculty-picker-select ${isAssigned ? "state-assigned" : "state-unassigned"}`}
                                   value={currentAssigned}
-                                  onChange={(e) => handleFacultyChange(sub.subject_code, e.target.value)}
+                                  onChange={(e) =>
+                                    handleFacultyChange(
+                                      sub.subject_code,
+                                      e.target.value,
+                                    )
+                                  }
                                 >
-                                  <option value="">-- Choose Faculty Member --</option>
+                                  <option value="">
+                                    -- Choose Faculty Member --
+                                  </option>
                                   {faculties.map((f) => (
-                                    <option key={f.faculty_id} value={f.faculty_id}>
-                                      {f.faculty_id} - {f.name} ({f.designation})
+                                    <option
+                                      key={f.faculty_id}
+                                      value={f.faculty_id}
+                                    >
+                                      {f.faculty_id} - {f.name} ({f.designation}
+                                      )
                                     </option>
                                   ))}
                                 </select>
@@ -544,7 +607,9 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                   <div className="footer-info-strip">
                     <ShieldCheck size={16} />
                     <span>
-                      Allocations are committed directly to MySQL and immediately synchronize with the faculty's teaching dashboard.
+                      Allocations are committed directly to MySQL and
+                      immediately synchronize with the faculty's teaching
+                      dashboard.
                     </span>
                   </div>
 
@@ -572,17 +637,22 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
           )}
 
           {/* VIEW 2: DEPARTMENT FACULTY ROSTER */}
-          {activeTab === 'faculties' && (
+          {activeTab === "faculties" && (
             <div className="erp-tab-content">
               <div className="erp-card-container p-20">
                 <div className="roster-top-bar">
                   <div>
-                    <h2 className="content-heading">Department Faculty Members</h2>
+                    <h2 className="content-heading">
+                      Department Faculty Members
+                    </h2>
                     <p className="content-subheading">
-                      Teaching roster for Department of {deptName} ({faculties.length} Registered Staff)
+                      Teaching roster for Department of {deptName} (
+                      {faculties.length} Registered Staff)
                     </p>
                   </div>
-                  <div className="badge-academic-year">Total Teaching Staff: {faculties.length}</div>
+                  <div className="badge-academic-year">
+                    Total Teaching Staff: {faculties.length}
+                  </div>
                 </div>
 
                 <div className="faculty-cards-grid">
@@ -591,15 +661,17 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                       <div className="fcard-header">
                         <div className="fcard-avatar">
                           {fac.name
-                            .replace('Dr.', '')
-                            .replace('Prof.', '')
+                            .replace("Dr.", "")
+                            .replace("Prof.", "")
                             .trim()
                             .slice(0, 2)
                             .toUpperCase()}
                         </div>
                         <div className="fcard-main">
                           <h4 className="fcard-name">{fac.name}</h4>
-                          <span className="fcard-id-pill">{fac.faculty_id}</span>
+                          <span className="fcard-id-pill">
+                            {fac.faculty_id}
+                          </span>
                         </div>
                       </div>
 
@@ -618,7 +690,11 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
                         </div>
                         <div className="fcard-row">
                           <span className="row-k">Institutional Role</span>
-                          <span className="row-v role-tag">{fac.is_hod ? 'Head of Department' : 'Subject Teacher'}</span>
+                          <span className="row-v role-tag">
+                            {fac.is_hod
+                              ? "Head of Department"
+                              : "Subject Teacher"}
+                          </span>
                         </div>
                       </div>
                     </div>

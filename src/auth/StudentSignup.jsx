@@ -1163,9 +1163,7 @@ export default function StudentSignup({ onBackToLogin }) {
 
                   {/* Academic Bank of Credits ID */}
                   <div className="form-control-group">
-                    <label className="form-label">
-                      ABC ID
-                    </label>
+                    <label className="form-label">ABC ID</label>
                     <input
                       type="text"
                       name="abcId"

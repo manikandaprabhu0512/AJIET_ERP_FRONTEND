@@ -1,13 +1,24 @@
-import React, { useState } from 'react';
-import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import './App.css';
-import RoleSelectionGateway from './auth/RoleSelectionGateway';
-import LoginPortal from './auth/LoginPortal';
-import StudentSignup from './auth/StudentSignup';
-import FlashScreen from './common/FlashScreen';
-import Dashboard from './common/Dashboard';
-import NoInternet from './common/nointernet';
-import { getStoredSession, saveSession, clearSession } from './utils/sessionManager';
+import React, { useState } from "react";
+import {
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+import "./App.css";
+import RoleSelectionGateway from "./auth/RoleSelectionGateway";
+import LoginPortal from "./auth/LoginPortal";
+import StudentSignup from "./auth/StudentSignup";
+import FacultySignup from "./auth/FacultySignup";
+import FlashScreen from "./common/FlashScreen";
+import Dashboard from "./common/Dashboard";
+import NoInternet from "./common/nointernet";
+import {
+  getStoredSession,
+  saveSession,
+  clearSession,
+} from "./utils/sessionManager";
 
 /* ── Gateway page (/): select a portal, then push to /login. If logged in, go to /dashboard ── */
 function GatewayPage() {
@@ -20,7 +31,7 @@ function GatewayPage() {
   }
 
   const handleSelectRole = (roleConfig) => {
-    navigate('/login', { state: { role: roleConfig } });
+    navigate("/login", { state: { role: roleConfig } });
   };
   return <RoleSelectionGateway onSelectRole={handleSelectRole} />;
 }
@@ -39,11 +50,11 @@ function LoginPage() {
 
   // Role passed from Gateway via navigate state; fallback to Student
   const selectedRole = location.state?.role || {
-    category: 'student',
-    subRole: 'Student',
-    title: 'Student Portal',
-    identifierType: 'USN',
-    exampleId: '4JK26AB123',
+    category: "student",
+    subRole: "Student",
+    title: "Student Portal",
+    identifierType: "USN",
+    exampleId: "4JK26AB123",
   };
 
   const handleLoginSuccess = (user) => {
@@ -52,7 +63,7 @@ function LoginPage() {
   };
 
   const handleFlashComplete = () => {
-    navigate('/dashboard', { replace: true });
+    navigate("/dashboard", { replace: true });
   };
 
   if (showFlash) {
@@ -63,9 +74,10 @@ function LoginPage() {
     <LoginPortal
       key={`${selectedRole.category}-${selectedRole.subRole}`}
       selectedRole={selectedRole}
-      onBackToGateway={() => navigate('/')}
+      onBackToGateway={() => navigate("/")}
       onLoginSuccess={handleLoginSuccess}
-      onStudentSignup={() => navigate('/signup')}
+      onStudentSignup={() => navigate("/signup")}
+      onFacultySignup={() => navigate("/faculty-signup")}
     />
   );
 }
@@ -78,7 +90,7 @@ function DashboardPage() {
   const handleLogout = () => {
     clearSession();
     setCurrentUser(null);
-    navigate('/', { replace: true });
+    navigate("/", { replace: true });
   };
 
   if (!currentUser) {
@@ -98,6 +110,10 @@ export default function App() {
         <Route path="/" element={<GatewayPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<StudentSignup />} />
+
+        <Route path="/faculty-signup" element={<FacultySignup />} />
+        <Route path="/faculty-register" element={<FacultySignup />} />
+        <Route path="/faculty/register" element={<FacultySignup />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
