@@ -50,6 +50,7 @@ export default function LoginPortal({
   onStudentSignup,
 }) {
   const isStudent = selectedRole.category === "student";
+  const staffIdRoleLabel = selectedRole.subRole.replace(/\s+staff$/i, "");
 
   // Input states
   const [username, setUsername] = useState("");
@@ -322,7 +323,7 @@ export default function LoginPortal({
           <div className="brand-text-block">
             <h1 className="brand-college-name">A.J. INSTITUTE</h1>
             <p className="brand-college-name">OF ENGINEERING & TECHNOLOGY</p>
-            <span className="brand-location">MANGALURU • ESTD 2006</span>
+            <span className="brand-location">MANGALURU • ESTD 2016</span>
           </div>
 
           <button
@@ -369,7 +370,7 @@ export default function LoginPortal({
             {/* Username / Identifier */}
             <div className="field-group">
               <label className="field-label">
-                {isStudent ? "Student USN" : `${selectedRole.subRole} Staff ID`}
+                {isStudent ? "Student USN" : `${staffIdRoleLabel} Staff ID`}
               </label>
               <div className="input-box">
                 <span className="input-icon">

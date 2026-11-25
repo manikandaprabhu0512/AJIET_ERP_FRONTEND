@@ -63,7 +63,7 @@ export default function RoleSelectionGateway({ onSelectRole }) {
   const handleDeptSelect = () => {
     onSelectRole({
       category: "department",
-      subRole: "Department Staff",
+      subRole: "Department",
       title: "Departmental Portal Login",
       identifierType: "Staff ID",
       exampleId: "HODCS12345",

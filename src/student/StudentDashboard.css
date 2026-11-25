@@ -625,6 +625,195 @@
   word-break: break-word;
 }
 
+/* Resume-style Student Information Sheet */
+.student-profile-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.student-profile-toolbar h2 {
+  margin: 0;
+  color: var(--student-navy);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.student-profile-toolbar p {
+  margin: 3px 0 0;
+  color: var(--student-text-sub);
+  font-size: 0.86rem;
+}
+
+.student-profile-view-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--student-navy);
+  border-radius: 6px;
+  padding: 9px 14px;
+  background: var(--student-navy);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.student-profile-view-button:hover {
+  background: var(--student-navy-dark);
+  transform: translateY(-1px);
+}
+
+.student-profile-document {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--student-border-dark);
+  border-top: 4px solid var(--student-navy);
+  border-radius: 8px;
+  padding: 28px 34px 18px;
+  box-sizing: border-box;
+  box-shadow: 0 3px 14px rgba(15, 23, 42, 0.06);
+}
+
+.student-record-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--student-border);
+}
+
+.student-record-kicker {
+  color: var(--student-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 1.1px;
+}
+
+.student-record-header h2 {
+  margin: 6px 0 3px;
+  color: var(--student-navy);
+  font-size: 1.65rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.student-record-header p {
+  margin: 0;
+  color: var(--student-text-muted);
+  font-size: 0.92rem;
+}
+
+.student-record-usn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--student-accent);
+  background: #f1f8fc;
+}
+
+.student-record-usn span {
+  color: var(--student-text-sub);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.student-record-usn strong {
+  color: var(--student-navy);
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 0.92rem;
+}
+
+.student-record-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--student-border);
+  color: var(--student-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.student-record-summary span + span::before {
+  content: '•';
+  margin-right: 20px;
+  color: var(--student-accent);
+}
+
+.student-record-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.student-record-section {
+  padding: 17px 0 14px;
+  border-bottom: 1px solid var(--student-border);
+}
+
+.student-record-section:last-child {
+  border-bottom: 0;
+}
+
+.student-record-section-title {
+  margin: 0 0 8px;
+  color: var(--student-navy);
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.student-record-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 22px;
+  margin: 0;
+}
+
+.student-record-field {
+  min-width: 0;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.student-record-field dt {
+  margin-bottom: 3px;
+  color: var(--student-text-sub);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+}
+
+.student-record-field dd {
+  margin: 0;
+  color: var(--student-text-main);
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.student-record-field-wide {
+  grid-column: 1 / -1;
+}
+
+.student-record-document-footer {
+  padding-top: 12px;
+  color: var(--student-text-sub);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
 /* ====================================================
    VIEW 2: ACADEMICS TAB STYLING
    ==================================================== */
@@ -2232,5 +2421,198 @@
 
   .gl-identity-strip {
     padding: 16px 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-profile-document {
+    padding: 20px 18px 14px;
+  }
+
+  .student-record-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .student-record-usn {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .student-record-summary {
+    gap: 8px 12px;
+  }
+
+  .student-record-summary span + span::before {
+    margin-right: 12px;
+  }
+
+  .student-record-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-profile-toolbar {
+    align-items: flex-start;
+  }
+
+  .student-profile-toolbar h2 {
+    font-size: 1.05rem;
+  }
+
+  .student-profile-toolbar p {
+    font-size: 0.78rem;
+  }
+
+  .student-profile-view-button {
+    gap: 6px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+
+  .student-profile-document {
+    padding: 18px 14px 12px;
+  }
+
+  .student-record-header h2 {
+    font-size: 1.35rem;
+  }
+
+  .student-record-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .student-record-field-wide {
+    grid-column: auto;
+  }
+}
+
+.student-profile-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(2, 15, 32, 0.72);
+  box-sizing: border-box;
+}
+
+.student-profile-preview-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1280px, 100%);
+  height: min(94dvh, 1000px);
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f1f5f9;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.student-profile-preview-modal-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--student-border);
+  background: #ffffff;
+}
+
+.student-profile-preview-modal-header h2 {
+  margin: 0;
+  color: var(--student-navy);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.student-profile-preview-modal-header p {
+  margin: 3px 0 0;
+  color: var(--student-text-sub);
+  font-size: 0.78rem;
+}
+
+.student-profile-preview-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--student-border-dark);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--student-navy);
+  cursor: pointer;
+}
+
+.student-profile-preview-close:hover {
+  background: #f1f5f9;
+}
+
+.student-profile-preview-stage {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  padding: 14px;
+  box-sizing: border-box;
+}
+
+.student-profile-preview-frame {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.student-profile-preview-page {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(1120px, calc(100vw - 52px));
+  max-width: none;
+  margin: 0;
+  padding: 24px 30px 16px;
+  border-top-width: 4px;
+  border-radius: 3px;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
+  transform-origin: top left;
+}
+
+@media (max-width: 600px) {
+  .student-profile-preview-overlay {
+    padding: 8px;
+  }
+
+  .student-profile-preview-modal {
+    width: 100%;
+    height: 96dvh;
+    border-radius: 8px;
+  }
+
+  .student-profile-preview-modal-header {
+    padding: 11px 12px;
+  }
+
+  .student-profile-preview-stage {
+    padding: 8px;
+  }
+
+  .student-profile-preview-page {
+    padding: 18px 14px 12px;
+  }
+
+  .student-profile-preview-page .student-record-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+  }
+
+  .student-profile-preview-page .student-record-field-wide {
+    grid-column: 1 / -1;
   }
 }
