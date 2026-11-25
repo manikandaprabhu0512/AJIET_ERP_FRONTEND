@@ -27,7 +27,9 @@
   display: flex;
   flex-direction: column;
   background: var(--student-bg);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
   color: var(--student-text-main);
   overflow: hidden;
   /* Locks outer frame: no horizontal or vertical window scrollbars */
@@ -187,7 +189,7 @@
   font-weight: 800;
   color: var(--student-accent);
   letter-spacing: 0.4px;
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: "SF Mono", Consolas, monospace;
 }
 
 .sidebar-student-branch {
@@ -532,7 +534,7 @@
 
 .usn-color-text {
   color: var(--student-accent);
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: "SF Mono", Consolas, monospace;
 }
 
 /* Profile Section Cards */
@@ -661,7 +663,9 @@
   font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.15s ease, transform 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .student-profile-view-button:hover {
@@ -730,7 +734,7 @@
 
 .student-record-usn strong {
   color: var(--student-navy);
-  font-family: 'SF Mono', Consolas, monospace;
+  font-family: "SF Mono", Consolas, monospace;
   font-size: 0.92rem;
 }
 
@@ -746,7 +750,7 @@
 }
 
 .student-record-summary span + span::before {
-  content: '•';
+  content: "•";
   margin-right: 20px;
   color: var(--student-accent);
 }
@@ -897,7 +901,7 @@
 
 .feature-info h4 {
   margin: 0 0 4px 0;
-  font-size: 1.0rem;
+  font-size: 1rem;
   font-weight: 800;
   color: var(--student-navy);
 }
@@ -1538,14 +1542,12 @@
   }
 }
 
-
 /* ====================================================
    RESPONSIVE DESIGN BREAKPOINTS
    ==================================================== */
 
 /* ── Tablet: 1024px ── */
 @media (max-width: 1024px) {
-
   .overview-hero-grid,
   .academic-stats-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1558,7 +1560,6 @@
 
 /* ── Mobile/Small Tablet: 768px ── */
 @media (max-width: 768px) {
-
   /* Sidebar becomes a slide-in overlay above the content */
   .student-portal-workspace {
     position: relative;
@@ -1572,7 +1573,9 @@
     max-height: 100% !important;
     z-index: 200;
     transform: translateX(-100%);
-    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s ease;
+    transition:
+      transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+      width 0.25s ease;
   }
 
   /* When open: slide in from left */
@@ -1640,7 +1643,6 @@
 
 /* ── Phone: 480px ── */
 @media (max-width: 480px) {
-
   /* Hero strip goes single column on phone */
   .overview-hero-grid {
     grid-template-columns: 1fr;
@@ -1797,12 +1799,16 @@
   gap: 2px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(4, 45, 87, 0.05), 0 2px 8px rgba(4, 45, 87, 0.04);
-  transition: transform 0.18s, box-shadow 0.18s;
+  box-shadow:
+    0 1px 3px rgba(4, 45, 87, 0.05),
+    0 2px 8px rgba(4, 45, 87, 0.04);
+  transition:
+    transform 0.18s,
+    box-shadow 0.18s;
 }
 
 .grades-kpi-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -1956,7 +1962,9 @@
   font-family: inherit;
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .sem-dropdown-select:hover {
@@ -2210,7 +2218,7 @@
   border-radius: 7px;
   letter-spacing: 0.06em;
   border: 1px solid #e2e8f0;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 /* Marks / Attendance values */

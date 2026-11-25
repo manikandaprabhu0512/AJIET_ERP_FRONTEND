@@ -108,227 +108,192 @@ function StudentProfileDocument({
       className={`student-profile-document ${preview ? "student-profile-preview-page" : ""}`}
       ref={sheetRef}
     >
-        <header className="student-record-header">
-          <div>
-            <span className="student-record-kicker">
-              AJIET • STUDENT RECORD
-            </span>
-            <h2>{studentData.fullName || "Student Profile"}</h2>
-            <p>{studentData.branch || "Department not provided"}</p>
-          </div>
-          <div className="student-record-usn">
-            <span>University Seat Number</span>
-            <strong>{studentData.usn || "Not Provided"}</strong>
-          </div>
-        </header>
-
-        <div className="student-record-summary">
-          <span>
-            {studentData.programType === "UG"
-              ? "Undergraduate (UG) - B.E."
-              : "Postgraduate (PG)"}
-          </span>
-          <span>
-            Batch {studentData.enrolledYear || "Not Provided"}
-          </span>
-          <span>{studentData.section || "Not Provided"}</span>
-          <span>
-            {studentData.admissionQuota || "Quota not provided"} Quota
-          </span>
+      <header className="student-record-header">
+        <div>
+          <span className="student-record-kicker">AJIET • STUDENT RECORD</span>
+          <h2>{studentData.fullName || "Student Profile"}</h2>
+          <p>{studentData.branch || "Department not provided"}</p>
         </div>
-
-        <div className="student-record-body">
-          <StudentProfileSection title="Academic & Admission Details">
-            <StudentProfileField
-              label="Program Level"
-              value={
-                studentData.programType === "UG"
-                  ? "Undergraduate (UG) - B.E."
-                  : "Postgraduate (PG)"
-              }
-            />
-            <StudentProfileField
-              label="Admission Quota"
-              value={studentData.admissionQuota}
-            />
-            <StudentProfileField label="USN" value={studentData.usn} />
-            <StudentProfileField
-              label="Department / Branch"
-              value={studentData.branch}
-            />
-            <StudentProfileField
-              label="Section"
-              value={studentData.section}
-            />
-            <StudentProfileField
-              label="Enrolled Year"
-              value={studentData.enrolledYear}
-            />
-          </StudentProfileSection>
-
-          <StudentProfileSection title="Personal & Identity Details">
-            <StudentProfileField
-              label="Date of Birth"
-              value={studentData.dob}
-            />
-            <StudentProfileField
-              label="Gender"
-              value={studentData.gender}
-            />
-            <StudentProfileField
-              label="Blood Group"
-              value={studentData.bloodGroup}
-            />
-            <StudentProfileField
-              label="Place of Stay"
-              value={studentData.placeOfStay}
-            />
-            <StudentProfileField
-              label="Religion"
-              value={studentData.religion}
-            />
-            <StudentProfileField
-              label="Caste / Sub-Caste"
-              value={studentData.caste}
-            />
-            <StudentProfileField
-              label="Category"
-              value={studentData.category}
-            />
-            <StudentProfileField
-              label="Aadhaar Card Number"
-              value={
-                studentData.aadhaarNumber
-                  ? `${studentData.aadhaarNumber.slice(0, 4)} ${studentData.aadhaarNumber.slice(4, 8)} ${studentData.aadhaarNumber.slice(8, 12)}`
-                  : ""
-              }
-            />
-            {(studentData.placeOfStay === "PG" ||
-              studentData.placeOfStay === "Other") && (
-              <>
-                <StudentProfileField
-                  label="Owner / Caretaker Name"
-                  value={studentData.pgOwnerName}
-                />
-                <StudentProfileField
-                  label="Owner Contact Number"
-                  value={`${studentData.pgContactCountryCode} ${studentData.pgContactNumber}`.trim()}
-                />
-                <StudentProfileField
-                  label="Accommodation / PG Address"
-                  value={studentData.pgAddress}
-                  className="student-record-field-wide"
-                />
-              </>
-            )}
-          </StudentProfileSection>
-
-          <StudentProfileSection title="Education Details">
-            <StudentProfileField
-              label="SSLC / 10th Percentage"
-              value={
-                studentData.sslcPercentage
-                  ? `${studentData.sslcPercentage}%`
-                  : ""
-              }
-            />
-            <StudentProfileField
-              label="PUC / 12th PCM Percentage"
-              value={
-                studentData.pucPcmPercentage
-                  ? `${studentData.pucPcmPercentage}%`
-                  : ""
-              }
-            />
-            <StudentProfileField
-              label="PUC / 12th Total Percentage"
-              value={
-                studentData.pucTotalPercentage
-                  ? `${studentData.pucTotalPercentage}%`
-                  : ""
-              }
-            />
-            <StudentProfileField
-              label="Studied Kannada in SSLC"
-              value={studentData.studiedKannadaInSSLC}
-            />
-            <StudentProfileField
-              label="ABC ID"
-              value={studentData.abcId}
-            />
-            <StudentProfileField
-              label="Student SSID (Scholarship ID)"
-              value={studentData.studentSsid}
-            />
-          </StudentProfileSection>
-
-          <StudentProfileSection title="Contact & Residential Details">
-            <StudentProfileField
-              label="Email Address"
-              value={studentData.email}
-            />
-            <StudentProfileField
-              label="Mobile Number"
-              value={`${studentData.mobileCountryCode} ${studentData.mobile}`.trim()}
-            />
-            <StudentProfileField
-              label="State"
-              value={studentData.state}
-            />
-            <StudentProfileField
-              label="District"
-              value={studentData.district}
-            />
-            <StudentProfileField
-              label="City / Town"
-              value={studentData.city}
-            />
-            <StudentProfileField
-              label="Postal PIN Code"
-              value={studentData.pincode}
-            />
-            <StudentProfileField
-              label="Permanent Residential Address"
-              value={studentData.addressLine1}
-              className="student-record-field-wide"
-            />
-          </StudentProfileSection>
-
-          <StudentProfileSection title="Parent & Guardian Information">
-            <StudentProfileField
-              label="Father's / Guardian's Name"
-              value={studentData.fatherName}
-            />
-            <StudentProfileField
-              label="Father's Occupation"
-              value={studentData.fatherOccupation}
-            />
-            <StudentProfileField
-              label="Father's Contact Number"
-              value={`${studentData.fatherMobileCountryCode} ${studentData.fatherMobile}`.trim()}
-            />
-            <StudentProfileField
-              label="Mother's Name"
-              value={studentData.motherName}
-            />
-            <StudentProfileField
-              label="Mother's Occupation"
-              value={studentData.motherOccupation}
-            />
-            <StudentProfileField
-              label="Mother's Contact Number"
-              value={
-                studentData.motherMobile
-                  ? `${studentData.motherMobileCountryCode} ${studentData.motherMobile}`
-                  : ""
-              }
-            />
-          </StudentProfileSection>
+        <div className="student-record-usn">
+          <span>University Seat Number</span>
+          <strong>{studentData.usn || "Not Provided"}</strong>
         </div>
-        <footer className="student-record-document-footer">
-          A. J. Institute of Engineering &amp; Technology, Mangaluru •
-          Official Student Information Sheet
-        </footer>
+      </header>
+
+      <div className="student-record-summary">
+        <span>
+          {studentData.programType === "UG"
+            ? "Undergraduate (UG) - B.E."
+            : "Postgraduate (PG)"}
+        </span>
+        <span>Batch {studentData.enrolledYear || "Not Provided"}</span>
+        <span>{studentData.section || "Not Provided"}</span>
+        <span>{studentData.admissionQuota || "Quota not provided"} Quota</span>
+      </div>
+
+      <div className="student-record-body">
+        <StudentProfileSection title="Academic & Admission Details">
+          <StudentProfileField
+            label="Program Level"
+            value={
+              studentData.programType === "UG"
+                ? "Undergraduate (UG) - B.E."
+                : "Postgraduate (PG)"
+            }
+          />
+          <StudentProfileField
+            label="Admission Quota"
+            value={studentData.admissionQuota}
+          />
+          <StudentProfileField label="USN" value={studentData.usn} />
+          <StudentProfileField
+            label="Department / Branch"
+            value={studentData.branch}
+          />
+          <StudentProfileField label="Section" value={studentData.section} />
+          <StudentProfileField
+            label="Enrolled Year"
+            value={studentData.enrolledYear}
+          />
+        </StudentProfileSection>
+
+        <StudentProfileSection title="Personal & Identity Details">
+          <StudentProfileField label="Date of Birth" value={studentData.dob} />
+          <StudentProfileField label="Gender" value={studentData.gender} />
+          <StudentProfileField
+            label="Blood Group"
+            value={studentData.bloodGroup}
+          />
+          <StudentProfileField
+            label="Place of Stay"
+            value={studentData.placeOfStay}
+          />
+          <StudentProfileField label="Religion" value={studentData.religion} />
+          <StudentProfileField
+            label="Caste / Sub-Caste"
+            value={studentData.caste}
+          />
+          <StudentProfileField label="Category" value={studentData.category} />
+          <StudentProfileField
+            label="Aadhaar Card Number"
+            value={
+              studentData.aadhaarNumber
+                ? `${studentData.aadhaarNumber.slice(0, 4)} ${studentData.aadhaarNumber.slice(4, 8)} ${studentData.aadhaarNumber.slice(8, 12)}`
+                : ""
+            }
+          />
+          {(studentData.placeOfStay === "PG" ||
+            studentData.placeOfStay === "Other") && (
+            <>
+              <StudentProfileField
+                label="Owner / Caretaker Name"
+                value={studentData.pgOwnerName}
+              />
+              <StudentProfileField
+                label="Owner Contact Number"
+                value={`${studentData.pgContactCountryCode} ${studentData.pgContactNumber}`.trim()}
+              />
+              <StudentProfileField
+                label="Accommodation / PG Address"
+                value={studentData.pgAddress}
+                className="student-record-field-wide"
+              />
+            </>
+          )}
+        </StudentProfileSection>
+
+        <StudentProfileSection title="Education Details">
+          <StudentProfileField
+            label="SSLC / 10th Percentage"
+            value={
+              studentData.sslcPercentage ? `${studentData.sslcPercentage}%` : ""
+            }
+          />
+          <StudentProfileField
+            label="PUC / 12th PCM Percentage"
+            value={
+              studentData.pucPcmPercentage
+                ? `${studentData.pucPcmPercentage}%`
+                : ""
+            }
+          />
+          <StudentProfileField
+            label="PUC / 12th Total Percentage"
+            value={
+              studentData.pucTotalPercentage
+                ? `${studentData.pucTotalPercentage}%`
+                : ""
+            }
+          />
+          <StudentProfileField
+            label="Studied Kannada in SSLC"
+            value={studentData.studiedKannadaInSSLC}
+          />
+          <StudentProfileField label="ABC ID" value={studentData.abcId} />
+          <StudentProfileField
+            label="Student SSID (Scholarship ID)"
+            value={studentData.studentSsid}
+          />
+        </StudentProfileSection>
+
+        <StudentProfileSection title="Contact & Residential Details">
+          <StudentProfileField
+            label="Email Address"
+            value={studentData.email}
+          />
+          <StudentProfileField
+            label="Mobile Number"
+            value={`${studentData.mobileCountryCode} ${studentData.mobile}`.trim()}
+          />
+          <StudentProfileField label="State" value={studentData.state} />
+          <StudentProfileField label="District" value={studentData.district} />
+          <StudentProfileField label="City / Town" value={studentData.city} />
+          <StudentProfileField
+            label="Postal PIN Code"
+            value={studentData.pincode}
+          />
+          <StudentProfileField
+            label="Permanent Residential Address"
+            value={studentData.addressLine1}
+            className="student-record-field-wide"
+          />
+        </StudentProfileSection>
+
+        <StudentProfileSection title="Parent & Guardian Information">
+          <StudentProfileField
+            label="Father's / Guardian's Name"
+            value={studentData.fatherName}
+          />
+          <StudentProfileField
+            label="Father's Occupation"
+            value={studentData.fatherOccupation}
+          />
+          <StudentProfileField
+            label="Father's Contact Number"
+            value={`${studentData.fatherMobileCountryCode} ${studentData.fatherMobile}`.trim()}
+          />
+          <StudentProfileField
+            label="Mother's Name"
+            value={studentData.motherName}
+          />
+          <StudentProfileField
+            label="Mother's Occupation"
+            value={studentData.motherOccupation}
+          />
+          <StudentProfileField
+            label="Mother's Contact Number"
+            value={
+              studentData.motherMobile
+                ? `${studentData.motherMobileCountryCode} ${studentData.motherMobile}`
+                : ""
+            }
+          />
+        </StudentProfileSection>
+      </div>
+      <footer className="student-record-document-footer">
+        A. J. Institute of Engineering &amp; Technology, Mangaluru • Official
+        Student Information Sheet
+      </footer>
     </article>
   );
 }
@@ -414,11 +379,12 @@ export default function StudentDashboard({
         stage.clientHeight -
         parseFloat(stageStyle.paddingTop) -
         parseFloat(stageStyle.paddingBottom);
-      const scale = Math.min(
-        availableWidth / sheetWidth,
-        availableHeight / sheetHeight,
-        1,
-      ) * 0.99;
+      const scale =
+        Math.min(
+          availableWidth / sheetWidth,
+          availableHeight / sheetHeight,
+          1,
+        ) * 0.99;
       frame.style.width = `${sheetWidth * scale}px`;
       frame.style.height = `${sheetHeight * scale}px`;
       sheet.style.transform = `scale(${scale})`;
