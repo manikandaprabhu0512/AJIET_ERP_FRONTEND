@@ -16,18 +16,13 @@ import {
   CheckCircle2,
   Clock,
   Save,
-  GraduationCap,
   Sparkles,
-  Layers,
-  ArrowRight,
   ShieldCheck,
   RefreshCw,
-  UserCheck,
-  BarChart3,
   ChevronRight,
-  Award,
   Calendar,
-  FileSpreadsheet
+  MessageSquare,
+  ClipboardCheck
 } from 'lucide-react';
 
 export default function HodDashboard({ onLogout = () => {}, currentUser = null }) {
@@ -37,8 +32,8 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
   // Sidebar toggle state (Expanded on desktop, collapsed on mobile)
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => window.innerWidth >= 768);
 
-  // Active navigation tab: 'allocation' | 'faculties' | 'advisors' | 'curriculum' | 'analytics'
-  const [activeTab, setActiveTab] = useState('allocation');
+  // Active navigation tab
+  const [activeTab, setActiveTab] = useState('faculties');
 
   // Department state
   const deptCode = currentUser?.deptCode || 'EC';
@@ -181,6 +176,56 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
   const totalSubjects = subjects.length;
   const allocatedCount = subjects.filter((s) => allocations[s.subject_code]).length;
   const pendingCount = totalSubjects - allocatedCount;
+  const sidebarItems = [
+    {
+      id: 'faculties',
+      label: 'Faculties List',
+      miniLabel: 'Faculties',
+      subtitle: `${faculties.length} teaching staff`,
+      icon: Users
+    },
+    {
+      id: 'allocation',
+      label: 'Subject Allotment',
+      miniLabel: 'Allotment',
+      subtitle: 'Assign faculty to subjects',
+      icon: BookOpen
+    },
+    {
+      id: 'attendance',
+      label: 'Attendance',
+      miniLabel: 'Attendance',
+      subtitle: 'Department attendance',
+      icon: Calendar
+    },
+    {
+      id: 'activities',
+      label: 'Other Activities',
+      miniLabel: 'Activities',
+      subtitle: 'Department activities',
+      icon: Sparkles
+    },
+    {
+      id: 'message',
+      label: 'Message',
+      miniLabel: 'Message',
+      subtitle: 'Department communication',
+      icon: MessageSquare
+    },
+    {
+      id: 'approvals',
+      label: 'Approvals',
+      miniLabel: 'Approvals',
+      subtitle: 'Items requiring approval',
+      icon: ClipboardCheck
+    }
+  ];
+  const placeholderTabs = {
+    attendance: 'Attendance',
+    activities: 'Other Activities',
+    message: 'Message',
+    approvals: 'Approvals'
+  };
 
   const hodName = currentUser?.name || 'Dr. Ravindra K';
   const hodDesignation = currentUser?.designation || 'Professor & Head of Department';
@@ -239,82 +284,24 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
 
               {/* Navigation Menu */}
               <nav className="sidebar-nav-menu">
-                <div className="sidebar-menu-heading">Academic Administration</div>
-
-                <button
-                  type="button"
-                  className={`sidebar-nav-item ${activeTab === 'allocation' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('allocation')}
-                >
-                  <div className="nav-item-icon-box">
-                    <BookOpen size={18} />
-                  </div>
-                  <div className="nav-item-text">
-                    <span className="nav-title">Subject Allocation</span>
-                    <span className="nav-subtitle">Curriculum &amp; faculty mapping</span>
-                  </div>
-                  <ChevronRight size={16} className="nav-item-arrow" />
-                </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-nav-item ${activeTab === 'faculties' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('faculties')}
-                >
-                  <div className="nav-item-icon-box">
-                    <Users size={18} />
-                  </div>
-                  <div className="nav-item-text">
-                    <span className="nav-title">Department Faculty</span>
-                    <span className="nav-subtitle">{faculties.length} teaching professors</span>
-                  </div>
-                  <ChevronRight size={16} className="nav-item-arrow" />
-                </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-nav-item ${activeTab === 'advisors' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('advisors')}
-                >
-                  <div className="nav-item-icon-box">
-                    <UserCheck size={18} />
-                  </div>
-                  <div className="nav-item-text">
-                    <span className="nav-title">Class Advisors</span>
-                    <span className="nav-subtitle">Semester mentorship hub</span>
-                  </div>
-                  <ChevronRight size={16} className="nav-item-arrow" />
-                </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-nav-item ${activeTab === 'curriculum' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('curriculum')}
-                >
-                  <div className="nav-item-icon-box">
-                    <Layers size={18} />
-                  </div>
-                  <div className="nav-item-text">
-                    <span className="nav-title">Syllabus &amp; Schemes</span>
-                    <span className="nav-subtitle">VTU autonomous schemes</span>
-                  </div>
-                  <ChevronRight size={16} className="nav-item-arrow" />
-                </button>
-
-                <button
-                  type="button"
-                  className={`sidebar-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('analytics')}
-                >
-                  <div className="nav-item-icon-box">
-                    <BarChart3 size={18} />
-                  </div>
-                  <div className="nav-item-text">
-                    <span className="nav-title">Workload Analytics</span>
-                    <span className="nav-subtitle">Teaching credit distribution</span>
-                  </div>
-                  <ChevronRight size={16} className="nav-item-arrow" />
-                </button>
+                <div className="sidebar-menu-heading">Department Portal</div>
+                {sidebarItems.map(({ id, label, subtitle, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`sidebar-nav-item ${activeTab === id ? 'active' : ''}`}
+                    onClick={() => setActiveTab(id)}
+                  >
+                    <div className="nav-item-icon-box">
+                      <Icon size={18} />
+                    </div>
+                    <div className="nav-item-text">
+                      <span className="nav-title">{label}</span>
+                      <span className="nav-subtitle">{subtitle}</span>
+                    </div>
+                    <ChevronRight size={16} className="nav-item-arrow" />
+                  </button>
+                ))}
               </nav>
 
               {/* Sidebar Footer Note */}
@@ -326,65 +313,20 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
           ) : (
             /* Collapsed Mini Sidebar */
             <nav className="sidebar-mini-menu">
-              <button
-                type="button"
-                className={`sidebar-mini-item ${activeTab === 'allocation' ? 'active' : ''}`}
-                onClick={() => setActiveTab('allocation')}
-                title="Subject Allocation"
-              >
-                <div className="mini-icon-wrap">
-                  <BookOpen size={19} />
-                </div>
-                <span className="mini-item-label">Allocation</span>
-              </button>
-
-              <button
-                type="button"
-                className={`sidebar-mini-item ${activeTab === 'faculties' ? 'active' : ''}`}
-                onClick={() => setActiveTab('faculties')}
-                title="Department Faculty"
-              >
-                <div className="mini-icon-wrap">
-                  <Users size={19} />
-                </div>
-                <span className="mini-item-label">Faculty</span>
-              </button>
-
-              <button
-                type="button"
-                className={`sidebar-mini-item ${activeTab === 'advisors' ? 'active' : ''}`}
-                onClick={() => setActiveTab('advisors')}
-                title="Class Advisors"
-              >
-                <div className="mini-icon-wrap">
-                  <UserCheck size={19} />
-                </div>
-                <span className="mini-item-label">Advisors</span>
-              </button>
-
-              <button
-                type="button"
-                className={`sidebar-mini-item ${activeTab === 'curriculum' ? 'active' : ''}`}
-                onClick={() => setActiveTab('curriculum')}
-                title="Curriculum"
-              >
-                <div className="mini-icon-wrap">
-                  <Layers size={19} />
-                </div>
-                <span className="mini-item-label">Schemes</span>
-              </button>
-
-              <button
-                type="button"
-                className={`sidebar-mini-item ${activeTab === 'analytics' ? 'active' : ''}`}
-                onClick={() => setActiveTab('analytics')}
-                title="Analytics"
-              >
-                <div className="mini-icon-wrap">
-                  <BarChart3 size={19} />
-                </div>
-                <span className="mini-item-label">Analytics</span>
-              </button>
+              {sidebarItems.map(({ id, label, miniLabel, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`sidebar-mini-item ${activeTab === id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(id)}
+                  title={label}
+                >
+                  <div className="mini-icon-wrap">
+                    <Icon size={19} />
+                  </div>
+                  <span className="mini-item-label">{miniLabel}</span>
+                </button>
+              ))}
             </nav>
           )}
         </aside>
@@ -686,106 +628,15 @@ export default function HodDashboard({ onLogout = () => {}, currentUser = null }
             </div>
           )}
 
-          {/* VIEW 3: CLASS ADVISORS & MENTORS */}
-          {activeTab === 'advisors' && (
+          {placeholderTabs[activeTab] && (
             <div className="erp-tab-content">
               <div className="erp-card-container p-20">
-                <h2 className="content-heading">Semester Class Advisors &amp; Mentors</h2>
-                <p className="content-subheading">Designated faculty members overseeing semester batches</p>
-
-                <div className="faculty-cards-grid mt-16">
-                  <div className="faculty-profile-card">
-                    <div className="fcard-header">
-                      <div className="fcard-avatar">PK</div>
-                      <div className="fcard-main">
-                        <h4 className="fcard-name">Dr. Prasanna Kumar</h4>
-                        <span className="fcard-id-pill">EC001</span>
-                      </div>
-                    </div>
-                    <div className="fcard-body">
-                      <div className="fcard-row">
-                        <span className="row-k">Assigned Cohort</span>
-                        <strong className="row-v">Semester 3 — Section A</strong>
-                      </div>
-                      <div className="fcard-row">
-                        <span className="row-k">Responsibility</span>
-                        <strong className="row-v">Class Advisor &amp; Attendance Monitor</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="faculty-profile-card">
-                    <div className="fcard-header">
-                      <div className="fcard-avatar">RS</div>
-                      <div className="fcard-main">
-                        <h4 className="fcard-name">Prof. Rajesh Shetty</h4>
-                        <span className="fcard-id-pill">EC002</span>
-                      </div>
-                    </div>
-                    <div className="fcard-body">
-                      <div className="fcard-row">
-                        <span className="row-k">Assigned Cohort</span>
-                        <strong className="row-v">Semester 4 — Section A</strong>
-                      </div>
-                      <div className="fcard-row">
-                        <span className="row-k">Responsibility</span>
-                        <strong className="row-v">Class Advisor &amp; IA Coordinator</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 4: SYLLABUS & SCHEMES */}
-          {activeTab === 'curriculum' && (
-            <div className="erp-tab-content">
-              <div className="erp-card-container p-20">
-                <h2 className="content-heading">Curriculum Schemes &amp; VTU Regulations</h2>
-                <p className="content-subheading">Department course structure conforming to NEP / VTU 2021-22 autonomous regulations</p>
-
-                <div className="curriculum-scheme-box mt-16">
-                  <div className="scheme-row">
-                    <span className="scheme-title">B.E. Electronics &amp; Communication Engineering</span>
-                    <span className="scheme-badge">VTU 2021 / 2022 Scheme</span>
-                  </div>
-                  <p className="scheme-desc">
-                    Includes Transform Calculus, Digital System Design using Verilog, Analog Electronic Circuits, Network Analysis,
-                    and Professional Ethics as core 3rd &amp; 4th semester courses.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW 5: WORKLOAD ANALYTICS */}
-          {activeTab === 'analytics' && (
-            <div className="erp-tab-content">
-              <div className="erp-card-container p-20">
-                <h2 className="content-heading">Faculty Teaching Workload Analytics</h2>
-                <p className="content-subheading">Summary of credit and subject distribution across department teachers</p>
-
-                <div className="erp-stats-grid mt-16">
-                  <div className="stat-card">
-                    <div className="stat-meta">
-                      <span className="stat-label">Total Department Credits</span>
-                      <strong className="stat-val">36 Credits</strong>
-                    </div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-meta">
-                      <span className="stat-label">Theory Courses</span>
-                      <strong className="stat-val">8 Courses</strong>
-                    </div>
-                  </div>
-                  <div className="stat-card">
-                    <div className="stat-meta">
-                      <span className="stat-label">Practical / Labs</span>
-                      <strong className="stat-val">2 Labs</strong>
-                    </div>
-                  </div>
-                </div>
+                <h2 className="content-heading">
+                  {placeholderTabs[activeTab]}
+                </h2>
+                <p className="content-subheading">
+                  This section is not set up yet.
+                </p>
               </div>
             </div>
           )}
