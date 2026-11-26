@@ -43,6 +43,10 @@ const PG_BRANCHES = [
   "Master of Computer Applications (MCA)",
 ];
 
+const PERCENTAGE_FORMAT = /^(?:\d{2}|100)\.\d{2}$/;
+const PERCENTAGE_FORMAT_MESSAGE =
+  "Enter percentage with two digits and two decimal places (e.g. 88.50 or 100.00).";
+
 const SECTIONS = ["Section A", "Section B", "Section C"];
 
 const ENROLLED_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027];
@@ -129,6 +133,10 @@ const studentSignupZodSchema = z.object({
     .string()
     .trim()
     .min(1, "Notice: Mandatory field. SSLC percentage is required.")
+    .refine(
+      (val) => PERCENTAGE_FORMAT.test(val),
+      PERCENTAGE_FORMAT_MESSAGE,
+    )
     .refine((val) => {
       const num = parseFloat(val);
       return !isNaN(num) && num >= 0 && num <= 100;
@@ -136,19 +144,67 @@ const studentSignupZodSchema = z.object({
   pucPcmPercentage: z
     .string()
     .trim()
-    .min(1, "Notice: Mandatory field. PUC/12th PCM percentage is required.")
-    .refine((val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num >= 0 && num <= 100;
-    }, "PCM percentage must be a valid number between 0 and 100."),
+    .optional()
+    .refine(
+      (val) => !val || PERCENTAGE_FORMAT.test(val),
+      PERCENTAGE_FORMAT_MESSAGE,
+    )
+    .refine(
+      (val) =>
+        !val ||
+        (!isNaN(parseFloat(val)) &&
+          parseFloat(val) >= 0 &&
+          parseFloat(val) <= 100),
+      "PCM percentage must be a valid number between 0 and 100.",
+    ),
+  diplomaPercentage: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (val) => !val || PERCENTAGE_FORMAT.test(val),
+      PERCENTAGE_FORMAT_MESSAGE,
+    )
+    .refine(
+      (val) =>
+        !val ||
+        (!isNaN(parseFloat(val)) &&
+          parseFloat(val) >= 0 &&
+          parseFloat(val) <= 100),
+      "Diploma percentage must be a valid number between 0 and 100.",
+    ),
+  ugCgpa: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (val) => !val || /^\d\.\d{2}$/.test(val),
+      "Enter UG CGPA in the format 8.47 (one digit and two decimal places).",
+    )
+    .refine(
+      (val) =>
+        !val ||
+        (!isNaN(parseFloat(val)) &&
+          parseFloat(val) >= 0 &&
+          parseFloat(val) <= 10),
+      "UG CGPA must be a valid number between 0 and 10.",
+    ),
   pucTotalPercentage: z
     .string()
     .trim()
-    .min(1, "Notice: Mandatory field. PUC/12th total percentage is required.")
-    .refine((val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num >= 0 && num <= 100;
-    }, "Total percentage must be a valid number between 0 and 100."),
+    .optional()
+    .refine(
+      (val) => !val || PERCENTAGE_FORMAT.test(val),
+      PERCENTAGE_FORMAT_MESSAGE,
+    )
+    .refine(
+      (val) =>
+        !val ||
+        (!isNaN(parseFloat(val)) &&
+          parseFloat(val) >= 0 &&
+          parseFloat(val) <= 100),
+      "Total percentage must be a valid number between 0 and 100.",
+    ),
   studiedKannadaInSSLC: z
     .string()
     .min(
@@ -276,6 +332,8 @@ export default function StudentSignup({ onBackToLogin }) {
     // 3. Education Details
     sslcPercentage: "",
     pucPcmPercentage: "",
+    diplomaPercentage: "",
+    ugCgpa: "",
     pucTotalPercentage: "",
     studiedKannadaInSSLC: "Yes", // Yes | No
     abcId: "",
@@ -324,6 +382,29 @@ export default function StudentSignup({ onBackToLogin }) {
           errors[fieldName] = issue.message;
         }
       });
+    }
+
+    const isDiplomaLateralEntry =
+      dataToValidate.programType === "UG" &&
+      dataToValidate.admissionQuota === "Diploma - Lateral Entry";
+
+    if (dataToValidate.programType === "PG") {
+      if (!dataToValidate.ugCgpa?.trim()) {
+        errors.ugCgpa = "Notice: Mandatory field. UG CGPA is required.";
+      }
+    } else if (isDiplomaLateralEntry) {
+      if (!dataToValidate.diplomaPercentage?.trim()) {
+        errors.diplomaPercentage =
+          "Notice: Mandatory field. Diploma percentage is required.";
+      }
+    } else if (!dataToValidate.pucPcmPercentage?.trim()) {
+      errors.pucPcmPercentage =
+        "Notice: Mandatory field. PUC/12th PCM percentage is required.";
+    }
+
+    if (!isDiplomaLateralEntry && !dataToValidate.pucTotalPercentage?.trim()) {
+      errors.pucTotalPercentage =
+        "Notice: Mandatory field. PUC/12th total percentage is required.";
     }
 
     // Conditional rule for PG / Other place of stay (All 3 mandatory)
@@ -392,17 +473,21 @@ export default function StudentSignup({ onBackToLogin }) {
     } else if (
       name === "sslcPercentage" ||
       name === "pucPcmPercentage" ||
+      name === "diplomaPercentage" ||
+      name === "ugCgpa" ||
       name === "pucTotalPercentage"
     ) {
-      // Percentages: numeric + decimal point only, max 5 chars (e.g. 100.0)
-      val = val.replace(/[^0-9.]/g, "").slice(0, 6);
+      // Academic scores: numeric + decimal point only
+      val = val
+        .replace(/[^0-9.]/g, "")
+        .slice(0, name === "ugCgpa" ? 4 : 6);
     }
 
     const updatedData = { ...formData, [name]: val };
     setFormData(updatedData);
 
     // If user already blurred this field, validate immediately as they type
-    if (touched[name]) {
+    if (touched[name] || name === "admissionQuota") {
       const errs = computeValidationErrors(updatedData);
       setFormErrors(errs);
     }
@@ -415,12 +500,19 @@ export default function StudentSignup({ onBackToLogin }) {
     const updated = {
       ...formData,
       programType: newProg,
+      admissionQuota:
+        newProg === "PG"
+          ? formData.admissionQuota === "CET" ||
+            formData.admissionQuota === "Diploma - Lateral Entry"
+            ? "PG-CET"
+            : formData.admissionQuota
+          : formData.admissionQuota === "PG-CET"
+            ? "CET"
+            : formData.admissionQuota,
       branch: defaultBranch,
     };
     setFormData(updated);
-    if (touched.branch) {
-      setFormErrors(computeValidationErrors(updated));
-    }
+    setFormErrors(computeValidationErrors(updated));
   };
 
   // Handle State Change -> update State and reset District to first in list
@@ -439,8 +531,26 @@ export default function StudentSignup({ onBackToLogin }) {
   };
 
   const currentDistricts = INDIAN_STATES_AND_DISTRICTS[formData.state] || [];
-  const currentBranchList =
-    formData.programType === "UG" ? UG_BRANCHES : PG_BRANCHES;
+  const isPostgraduate = formData.programType === "PG";
+  const isDiplomaLateralEntry =
+    formData.programType === "UG" &&
+    formData.admissionQuota === "Diploma - Lateral Entry";
+  const educationScoreField = isPostgraduate
+    ? "ugCgpa"
+    : isDiplomaLateralEntry
+      ? "diplomaPercentage"
+      : "pucPcmPercentage";
+  const educationScoreLabel = isPostgraduate
+    ? "UG CGPA"
+    : isDiplomaLateralEntry
+      ? "Diploma Percentage"
+      : "PUC / 12th PCM Percentage";
+  const educationScoreHint = isPostgraduate
+    ? "Format: 8.47 (one digit and two decimal places)"
+    : isDiplomaLateralEntry
+      ? "Aggregate percentage in Diploma (e.g. 82.00)"
+      : "Physics + Chemistry + Math percentage (e.g. 82.00)";
+  const currentBranchList = isPostgraduate ? PG_BRANCHES : UG_BRANCHES;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -610,7 +720,7 @@ export default function StudentSignup({ onBackToLogin }) {
                     </select>
                   </div>
 
-                  {/* Admission Quota: CET / MANAGEMENT / Diploma - Lateral Entry */}
+                  {/* Admission Quota options depend on program level */}
                   <div className="form-control-group">
                     <label className="form-label">
                       Admission Quota <span className="text-danger">*</span>
@@ -621,11 +731,17 @@ export default function StudentSignup({ onBackToLogin }) {
                       value={formData.admissionQuota}
                       onChange={handleInputChange}
                     >
-                      <option value="CET">CET</option>
+                      {isPostgraduate ? (
+                        <option value="PG-CET">PG-CET</option>
+                      ) : (
+                        <option value="CET">CET</option>
+                      )}
                       <option value="MANAGEMENT">MANAGEMENT</option>
-                      <option value="Diploma - Lateral Entry">
-                        Diploma - Lateral Entry
-                      </option>
+                      {!isPostgraduate && (
+                        <option value="Diploma - Lateral Entry">
+                          Diploma - Lateral Entry
+                        </option>
+                      )}
                     </select>
                   </div>
 
@@ -1072,15 +1188,15 @@ export default function StudentSignup({ onBackToLogin }) {
                       </span>
                     ) : (
                       <span className="form-hint">
-                        Aggregate marks percentage in 10th Standard
+                        Aggregate percentage in 10th Standard (e.g. 88.50)
                       </span>
                     )}
                   </div>
 
-                  {/* PUC / 12th PCM Percentage */}
+                  {/* Program/quota-specific education score */}
                   <div className="form-control-group">
                     <label className="form-label">
-                      PUC / 12th PCM Percentage{" "}
+                      {educationScoreLabel}{" "}
                       <span className="text-danger">*</span>
                     </label>
                     <div className="input-with-icon">
@@ -1089,24 +1205,25 @@ export default function StudentSignup({ onBackToLogin }) {
                       </span>
                       <input
                         type="text"
-                        name="pucPcmPercentage"
-                        className={`form-input has-icon ${touched.pucPcmPercentage && formErrors.pucPcmPercentage ? "has-error" : ""}`}
-                        placeholder="e.g. 82.00"
-                        maxLength={6}
-                        value={formData.pucPcmPercentage}
+                        name={educationScoreField}
+                        className={`form-input has-icon ${touched[educationScoreField] && formErrors[educationScoreField] ? "has-error" : ""}`}
+                        placeholder={
+                          isPostgraduate ? "e.g. 8.47" : "e.g. 82.00"
+                        }
+                        maxLength={isPostgraduate ? 4 : 6}
+                        value={formData[educationScoreField]}
                         onChange={handleInputChange}
-                        onBlur={() => handleBlur("pucPcmPercentage")}
+                        onBlur={() => handleBlur(educationScoreField)}
                         required
                       />
                     </div>
-                    {touched.pucPcmPercentage && formErrors.pucPcmPercentage ? (
+                    {touched[educationScoreField] &&
+                    formErrors[educationScoreField] ? (
                       <span className="error-text">
-                        ⚠️ {formErrors.pucPcmPercentage}
+                        ⚠️ {formErrors[educationScoreField]}
                       </span>
                     ) : (
-                      <span className="form-hint">
-                        Physics + Chemistry + Math percentage
-                      </span>
+                      <span className="form-hint">{educationScoreHint}</span>
                     )}
                   </div>
 
@@ -1114,7 +1231,9 @@ export default function StudentSignup({ onBackToLogin }) {
                   <div className="form-control-group">
                     <label className="form-label">
                       PUC / 12th Total Percentage{" "}
-                      <span className="text-danger">*</span>
+                      {!isDiplomaLateralEntry && (
+                        <span className="text-danger">*</span>
+                      )}
                     </label>
                     <div className="input-with-icon">
                       <span className="field-icon">
@@ -1129,7 +1248,7 @@ export default function StudentSignup({ onBackToLogin }) {
                         value={formData.pucTotalPercentage}
                         onChange={handleInputChange}
                         onBlur={() => handleBlur("pucTotalPercentage")}
-                        required
+                        required={!isDiplomaLateralEntry}
                       />
                     </div>
                     {touched.pucTotalPercentage &&
@@ -1139,7 +1258,9 @@ export default function StudentSignup({ onBackToLogin }) {
                       </span>
                     ) : (
                       <span className="form-hint">
-                        Overall total percentage scored in 12th / PUC
+                        {isDiplomaLateralEntry
+                          ? "Optional PUC total (e.g. 85.20)"
+                          : "Overall PUC total percentage (e.g. 85.20)"}
                       </span>
                     )}
                   </div>
@@ -1880,10 +2001,11 @@ export default function StudentSignup({ onBackToLogin }) {
                 </div>
                 <div className="preview-field-cell">
                   <span className="preview-field-label">
-                    PUC/12th PCM Percentage
+                    {educationScoreLabel}
                   </span>
                   <strong className="preview-field-val">
-                    {formData.pucPcmPercentage}%
+                    {formData[educationScoreField]}
+                    {!isPostgraduate && "%"}
                   </strong>
                 </div>
                 <div className="preview-field-cell">
@@ -1891,7 +2013,9 @@ export default function StudentSignup({ onBackToLogin }) {
                     PUC/12th Total Percentage
                   </span>
                   <strong className="preview-field-val">
-                    {formData.pucTotalPercentage}%
+                    {formData.pucTotalPercentage
+                      ? `${formData.pucTotalPercentage}%`
+                      : "Not Provided"}
                   </strong>
                 </div>
                 <div className="preview-field-cell">

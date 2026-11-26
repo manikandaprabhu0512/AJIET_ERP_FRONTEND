@@ -1004,6 +1004,127 @@
   animation: spin 1s linear infinite;
 }
 
+.allocation-page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.academic-year-field,
+.allotment-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.academic-year-field {
+  min-width: 170px;
+}
+
+.academic-year-field .erp-select-input {
+  min-width: 180px;
+}
+
+.btn-erp-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--hod-navy);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-erp-secondary:hover {
+  background: #f1f5f9;
+}
+
+.curriculum-page-header .btn-erp-primary,
+.curriculum-page-header .btn-erp-secondary {
+  flex-shrink: 0;
+}
+
+.curriculum-create-card,
+.curriculum-subjects-card {
+  margin-bottom: 1rem;
+}
+
+.curriculum-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.curriculum-filter-controls .allotment-form-field {
+  min-width: 150px;
+}
+
+.allotment-readonly-field {
+  overflow-wrap: anywhere;
+}
+
+.allotment-create-card,
+.allotment-records-card,
+.department-faculties-card {
+  margin-bottom: 1rem;
+}
+
+.allotment-form {
+  padding: 1.25rem;
+}
+
+.allotment-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(170px, 1fr));
+  gap: 1rem;
+}
+
+.allotment-form-field .erp-select-input {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.allotment-readonly-field {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: 0.42rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.allotment-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--hod-border);
+}
+
+.allotment-form-actions .footer-info-strip {
+  max-width: 650px;
+}
+
 @media (max-width: 768px) {
   .erp-portal-sidebar.sidebar-open {
     position: fixed;
@@ -1011,5 +1132,30 @@
     bottom: 0;
     left: 0;
     box-shadow: 2px 0 12px rgba(0, 0, 0, 0.25);
+  }
+
+  .allocation-page-header,
+  .allotment-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .curriculum-filter-controls {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .allotment-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .curriculum-page-header .btn-erp-primary,
+  .curriculum-page-header .btn-erp-secondary {
+    width: 100%;
+  }
+
+  .allotment-form-actions .btn-erp-primary {
+    justify-content: center;
   }
 }
