@@ -7,6 +7,8 @@ import {
   getStudentGradesApi,
   getStudentActivitiesApi,
   addStudentActivityApi,
+  getStudentMessagesApi,
+  markStudentMessageReadApi,
 } from "../services/apiService";
 import {
   User,
@@ -32,6 +34,7 @@ import {
   PlusCircle,
   Check,
   X,
+  Bell,
 } from "lucide-react";
 
 // Initial empty profile schema (no fake mock names or numbers)
@@ -342,6 +345,8 @@ export default function StudentDashboard({
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [studentNotifications, setStudentNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
     if (!isProfilePreviewOpen) return undefined;
@@ -550,6 +555,34 @@ export default function StudentDashboard({
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, selectedSemester, studentData.usn]);
+
+  useEffect(() => {
+    const usn = studentData.usn || currentUser?.username;
+    if (!usn) return;
+
+    const loadNotifications = () => {
+      setNotificationsLoading(true);
+      getStudentMessagesApi(usn)
+        .then(setStudentNotifications)
+        .catch(() => setStudentNotifications([]))
+        .finally(() => setNotificationsLoading(false));
+    };
+
+    loadNotifications();
+    const interval = window.setInterval(loadNotifications, 30000);
+    return () => window.clearInterval(interval);
+  }, [studentData.usn, currentUser?.username]);
+
+  const handleMarkNotificationRead = async (messageId) => {
+    const usn = studentData.usn || currentUser?.username;
+    if (!usn) return;
+    await markStudentMessageReadApi(usn, messageId).catch(() => {});
+    setStudentNotifications((previous) =>
+      previous.map((message) =>
+        message.id === messageId ? { ...message, is_read: true } : message,
+      ),
+    );
+  };
 
   // Fetch extracurricular activities whenever Tab 3 is active
   useEffect(() => {
@@ -797,6 +830,24 @@ export default function StudentDashboard({
                   </div>
                   <ChevronRight size={16} className="nav-item-arrow" />
                 </button>
+
+                <button
+                  type="button"
+                  className={`sidebar-nav-item ${activeTab === "notifications" ? "active" : ""}`}
+                  onClick={() => setActiveTab("notifications")}
+                  title="Notifications"
+                >
+                  <div className="nav-item-icon-box">
+                    <Bell size={19} />
+                  </div>
+                  <div className="nav-item-text">
+                    <span className="nav-title">Notifications</span>
+                    <span className="nav-subtitle">
+                      Faculty messages
+                    </span>
+                  </div>
+                  <ChevronRight size={16} className="nav-item-arrow" />
+                </button>
               </nav>
 
               {/* Sidebar Institutional Footer Note */}
@@ -842,6 +893,18 @@ export default function StudentDashboard({
                   <Sparkles size={20} />
                 </div>
                 <span className="mini-item-label">Activities</span>
+              </button>
+
+              <button
+                type="button"
+                className={`sidebar-mini-item ${activeTab === "notifications" ? "active" : ""}`}
+                onClick={() => setActiveTab("notifications")}
+                title="Notifications"
+              >
+                <div className="mini-icon-wrap">
+                  <Bell size={20} />
+                </div>
+                <span className="mini-item-label">Notifications</span>
               </button>
             </nav>
           )}
@@ -1344,6 +1407,69 @@ export default function StudentDashboard({
                     </>
                   );
                 })()}
+            </div>
+          )}
+
+          {activeTab === "notifications" && (
+            <div className="tab-pane-container student-notifications-pane">
+              <div className="pane-header-banner">
+                <div>
+                  <h2>Notifications</h2>
+                  <p>Messages sent by faculty members</p>
+                </div>
+                <span className="notification-count">
+                  {studentNotifications.filter((message) => !message.is_read).length} unread
+                </span>
+              </div>
+
+              {notificationsLoading ? (
+                <div className="student-notifications-empty">
+                  <Loader2 size={20} className="animate-spin" />
+                  Loading notifications...
+                </div>
+              ) : studentNotifications.length === 0 ? (
+                <div className="student-notifications-empty">
+                  <Bell size={22} />
+                  No faculty messages received.
+                </div>
+              ) : (
+                <div className="student-notifications-list">
+                  {studentNotifications.map((message) => (
+                    <article
+                      className={`student-notification-card ${message.is_read ? "" : "unread"}`}
+                      key={message.id}
+                    >
+                      <div className="student-notification-icon">
+                        <Bell size={17} />
+                      </div>
+                      <div className="student-notification-content">
+                        <div className="student-notification-meta">
+                          <strong>
+                            {message.faculty_name || "Faculty"}
+                          </strong>
+                          <time>
+                            {message.sent_at
+                              ? new Date(message.sent_at).toLocaleString()
+                              : ""}
+                          </time>
+                        </div>
+                        {message.subject && <h3>{message.subject}</h3>}
+                        <p>{message.body}</p>
+                        {!message.is_read && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleMarkNotificationRead(message.id)
+                            }
+                          >
+                            Mark as read
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

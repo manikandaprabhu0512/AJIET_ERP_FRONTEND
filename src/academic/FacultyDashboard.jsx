@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import "./FacultyDashboard.css";
 import Header from "../common/Header";
 import Footer from "../common/Footer";
 import {
   getFacultyAssignedSubjectsApi,
   getFacultyProfileApi,
+  getFacultySubjectRosterApi,
+  sendFacultyMessageApi,
+  getFacultyMessagesApi,
 } from "../services/apiService";
 import { DEPARTMENTS } from "../data/departments";
 import {
@@ -20,7 +24,6 @@ import {
   FileSpreadsheet,
   ChevronRight,
   Plus,
-  Search,
   Download,
   X,
   Check,
@@ -82,6 +85,14 @@ const PROFILE_FIELD_LABELS = {
 };
 
 const ACADEMIC_YEAR_OPTIONS = ["2026-27", "2025-26", "2024-25", "2023-24"];
+const CLASS_SCHEDULE = [
+  { classNo: 1, time: "9:00 - 9:55" },
+  { classNo: 2, time: "9:55 - 10:50" },
+  { classNo: 3, time: "11:10 - 12:05" },
+  { classNo: 4, time: "1:25 - 2:15" },
+  { classNo: 5, time: "2:50 - 3:50" },
+  { classNo: 6, time: "3:50 - 4:40" },
+];
 const EVENT_TYPE_OPTIONS = [
   "Workshop",
   "Tech Talk",
@@ -94,124 +105,6 @@ const EVENT_TYPE_OPTIONS = [
   "Club Activity",
   "Others",
 ];
-
-const SAMPLE_ATTENDANCE_RECORDS = [
-  {
-    studentId: "STU001",
-    studentName: "Student 1",
-    classesHeld: 30,
-    classesAttended: 28,
-  },
-  {
-    studentId: "STU002",
-    studentName: "Student 2",
-    classesHeld: 30,
-    classesAttended: 25,
-  },
-  {
-    studentId: "STU003",
-    studentName: "Student 3",
-    classesHeld: 30,
-    classesAttended: 29,
-  },
-];
-
-const SAMPLE_SUBJECTS = [
-  {
-    id: "sub-1",
-    code: "SUB201",
-    name: "Subject 1",
-    attendanceRecords: SAMPLE_ATTENDANCE_RECORDS,
-    iaMarks: [
-      {
-        studentId: "STU001",
-        studentName: "Student 1",
-        ia1: 18,
-        ia2: 17,
-        ia3: 19,
-      },
-      {
-        studentId: "STU002",
-        studentName: "Student 2",
-        ia1: 16,
-        ia2: 18,
-        ia3: 17,
-      },
-      {
-        studentId: "STU003",
-        studentName: "Student 3",
-        ia1: 19,
-        ia2: 19,
-        ia3: 20,
-      },
-    ],
-  },
-  {
-    id: "sub-2",
-    code: "SUB202",
-    name: "Subject 2",
-    attendanceRecords: SAMPLE_ATTENDANCE_RECORDS,
-    iaMarks: [
-      {
-        studentId: "STU001",
-        studentName: "Student 1",
-        ia1: 17,
-        ia2: 18,
-        ia3: 16,
-      },
-      {
-        studentId: "STU002",
-        studentName: "Student 2",
-        ia1: 19,
-        ia2: 16,
-        ia3: 18,
-      },
-      {
-        studentId: "STU003",
-        studentName: "Student 3",
-        ia1: 18,
-        ia2: 20,
-        ia3: 19,
-      },
-    ],
-  },
-  {
-    id: "sub-3",
-    code: "SUB203",
-    name: "Subject 3",
-    attendanceRecords: SAMPLE_ATTENDANCE_RECORDS,
-    iaMarks: [
-      {
-        studentId: "STU001",
-        studentName: "Student 1",
-        ia1: 16,
-        ia2: 19,
-        ia3: 18,
-      },
-      {
-        studentId: "STU002",
-        studentName: "Student 2",
-        ia1: 18,
-        ia2: 17,
-        ia3: 16,
-      },
-      {
-        studentId: "STU003",
-        studentName: "Student 3",
-        ia1: 20,
-        ia2: 18,
-        ia3: 19,
-      },
-    ],
-  },
-];
-
-const SUBJECTS_BY_ACADEMIC_YEAR = Object.fromEntries(
-  ACADEMIC_YEAR_OPTIONS.map((year) => [
-    year,
-    { "2nd Semester": SAMPLE_SUBJECTS },
-  ]),
-);
 
 const SAMPLE_STUDENT_USNS = [
   "4JK26CS001",
@@ -344,8 +237,49 @@ export default function FacultyDashboard({
   const [subjectAcademicYear, setSubjectAcademicYear] = useState("");
   const [subjectSemester, setSubjectSemester] = useState("");
   const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [subjectRoster, setSubjectRoster] = useState([]);
+  const [subjectRosterLoading, setSubjectRosterLoading] = useState(false);
+  const [subjectRosterError, setSubjectRosterError] = useState("");
   const [subjectAssessmentTab, setSubjectAssessmentTab] =
     useState("attendance");
+  const [leaveForm, setLeaveForm] = useState({
+    leaveType: "Casual Leave",
+    fromDate: "",
+    toDate: "",
+    reason: "",
+    alternateArrangement: "",
+  });
+  const [leaveHistory, setLeaveHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ajiet_leave_requests") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [attendanceDate, setAttendanceDate] = useState(
+    () => new Date().toISOString().slice(0, 10),
+  );
+  const [attendanceTime, setAttendanceTime] = useState(CLASS_SCHEDULE[0].time);
+  const [attendancePeriod, setAttendancePeriod] = useState(1);
+  const [dailyAttendanceStatus, setDailyAttendanceStatus] = useState({});
+  const [lessonExecution, setLessonExecution] = useState(() =>
+    Array.from({ length: CLASS_SCHEDULE.length }, (_, index) => ({
+      actualTopic: "",
+      status: "",
+      remarks: "",
+      plannedTopic: [
+        "Introduction",
+        "Open-loop system",
+        "Closed-loop system",
+        "Feedback system",
+        "Applications",
+        "Revision",
+      ][index],
+    })),
+  );
+  const [iaMarksDraft, setIaMarksDraft] = useState({});
+  const [iaExcelFileName, setIaExcelFileName] = useState("");
+  const [subjectFormStatus, setSubjectFormStatus] = useState("");
   const [messageRecipientMode, setMessageRecipientMode] = useState("all");
   const [selectedMessageUsns, setSelectedMessageUsns] = useState([]);
   const [messageUsnQuery, setMessageUsnQuery] = useState("");
@@ -357,8 +291,10 @@ export default function FacultyDashboard({
   const [timetableAcademicYear, setTimetableAcademicYear] = useState("2026-27");
   const [timetableSemester, setTimetableSemester] = useState("Odd");
   const [timetableUploads, setTimetableUploads] = useState({});
+  const [timetableSubmissions, setTimetableSubmissions] = useState({});
   const timetableKey = `${timetableAcademicYear}-${timetableSemester}`;
   const selectedTimetableFile = timetableUploads[timetableKey];
+  const isTimetableSubmitted = Boolean(timetableSubmissions[timetableKey]);
 
   // Achievements sub-tab selection:
   // 'publication' | 'patent' | 'funding' | 'research' | 'awards' | 'workshops' | 'fdp' | 'reports'
@@ -455,8 +391,6 @@ export default function FacultyDashboard({
 
   // Publication filter states
   const [pubFilterYear, setPubFilterYear] = useState("All");
-  const [pubFilterType, setPubFilterType] = useState("All");
-  const [pubSearchQuery, setPubSearchQuery] = useState("");
   const [showAddPubForm, setShowAddPubForm] = useState(false);
 
   // New Publication form state with the exact requested fields:
@@ -582,9 +516,6 @@ export default function FacultyDashboard({
 
   // Patent filter states
   const [patentFilterYear, setPatentFilterYear] = useState("All");
-  const [patentFilterType, setPatentFilterType] = useState("All");
-  const [patentFilterStatus, setPatentFilterStatus] = useState("All");
-  const [patentSearchQuery, setPatentSearchQuery] = useState("");
   const [showAddPatentForm, setShowAddPatentForm] = useState(false);
 
   // New Patent Form State with requested fields:
@@ -767,6 +698,7 @@ export default function FacultyDashboard({
   // Subjects assigned via HOD/API
   const [assignedSubjects, setAssignedSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [assignedSubjectsError, setAssignedSubjectsError] = useState("");
   const [registeredData, setRegisteredData] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState("");
@@ -892,10 +824,12 @@ export default function FacultyDashboard({
 
   useEffect(() => {
     let isCurrent = true;
-    if (!authToken)
+    if (!authToken) {
+      setProfileLoading(false);
       return () => {
         isCurrent = false;
       };
+    }
 
     getFacultyProfileApi(authToken)
       .then((profile) => {
@@ -923,68 +857,71 @@ export default function FacultyDashboard({
     };
   }, [authToken]);
 
-  // Fetch assigned subjects allocated by HOD
   useEffect(() => {
+    if (!profileData.facultyId) return;
+    getFacultyMessagesApi(profileData.facultyId)
+      .then((messages) =>
+        setSentMessages(
+          messages.map((message) => ({
+            ...message,
+            sentAt: message.sentAt
+              ? new Date(message.sentAt).toLocaleString()
+              : "",
+          })),
+        ),
+      )
+      .catch(() => setSentMessages([]));
+  }, [profileData.facultyId]);
+
+  // Fetch assignments only after the signed-in faculty profile is resolved.
+  useEffect(() => {
+    let isCurrent = true;
+
+    if (profileLoading) {
+      return () => {
+        isCurrent = false;
+      };
+    }
+
+    if (!profileData.facultyId) {
+      setAssignedSubjects([]);
+      setAssignedSubjectsError("Faculty profile ID is unavailable.");
+      setLoading(false);
+      return () => {
+        isCurrent = false;
+      };
+    }
+
     async function loadAssigned() {
       try {
         setLoading(true);
-        const res = await getFacultyAssignedSubjectsApi(profileData.facultyId);
-        const list = Array.isArray(res) ? res : res?.assignedSubjects || [];
-        if (list.length > 0) {
-          setAssignedSubjects(list);
-        } else {
-          setAssignedSubjects([
-            {
-              subject_code: "21EC32",
-              subject_name: "Network Analysis & Synthesis",
-              semester: 3,
-              section: "Section A",
-              credits: 4,
-              is_lab: false,
-            },
-            {
-              subject_code: "21ECL37",
-              subject_name: "Analog Circuits Laboratory",
-              semester: 3,
-              section: "Section A (B1)",
-              credits: 1.5,
-              is_lab: true,
-            },
-          ]);
-        }
+        setAssignedSubjects([]);
+        setAssignedSubjectsError("");
+        const list = await getFacultyAssignedSubjectsApi(profileData.facultyId);
+        if (isCurrent) setAssignedSubjects(list);
       } catch (err) {
-        // Backend offline or local development: graceful fallback
-        setAssignedSubjects([
-          {
-            subject_code: "21EC32",
-            subject_name: "Network Analysis & Synthesis",
-            semester: 3,
-            section: "Section A",
-            credits: 4,
-            is_lab: false,
-          },
-          {
-            subject_code: "21ECL37",
-            subject_name: "Analog Circuits Laboratory",
-            semester: 3,
-            section: "Section A (B1)",
-            credits: 1.5,
-            is_lab: true,
-          },
-        ]);
+        if (isCurrent) {
+          setAssignedSubjects([]);
+          setAssignedSubjectsError(
+            err.message || "Failed to fetch HOD-assigned subjects.",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isCurrent) setLoading(false);
       }
     }
     loadAssigned();
-  }, [profileData.facultyId]);
+    return () => {
+      isCurrent = false;
+    };
+  }, [profileLoading, profileData.facultyId]);
 
   const showToast = (msg) => {
     setNotification(msg);
     setTimeout(() => setNotification(""), 3500);
   };
 
-  const handleSendMessage = (event) => {
+  const handleSendMessage = async (event) => {
     event.preventDefault();
     const body = messageBody.trim();
     if (!body) {
@@ -999,19 +936,83 @@ export default function FacultyDashboard({
       return;
     }
 
-    const record = {
-      id: Date.now(),
-      subject: messageSubject.trim(),
-      body,
-      recipientMode: messageRecipientMode,
-      recipients:
-        messageRecipientMode === "all" ? [] : [...selectedMessageUsns],
-      sentAt: new Date().toLocaleString(),
+    try {
+      await sendFacultyMessageApi({
+        facultyId: profileData.facultyId,
+        facultyName: facultyDisplayName,
+        department: profileData.department,
+        subject: messageSubject.trim(),
+        body,
+        recipientMode: messageRecipientMode,
+        recipients:
+          messageRecipientMode === "all" ? [] : [...selectedMessageUsns],
+      });
+      const messages = await getFacultyMessagesApi(profileData.facultyId);
+      setSentMessages(
+        messages.map((message) => ({
+          ...message,
+          sentAt: message.sentAt
+            ? new Date(message.sentAt).toLocaleString()
+            : new Date().toLocaleString(),
+        })),
+      );
+      setMessageSubject("");
+      setMessageBody("");
+      setSelectedMessageUsns([]);
+      showToast("Message sent successfully.");
+    } catch (err) {
+      showToast(err.message || "Failed to send message.");
+    }
+  };
+
+  const handleLeaveFieldChange = (event) => {
+    const { name, value } = event.target;
+    setLeaveForm((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleLeaveSubmit = (event) => {
+    event.preventDefault();
+    if (!leaveForm.fromDate || !leaveForm.toDate || !leaveForm.reason.trim()) {
+      showToast("Enter leave dates and reason.");
+      return;
+    }
+    if (leaveForm.toDate < leaveForm.fromDate) {
+      showToast("Leave end date cannot be earlier than the start date.");
+      return;
+    }
+
+    const leaveRequest = {
+      id: `LR-${Date.now()}`,
+      facultyId: profileData.facultyId || "FACULTY",
+      facultyName: facultyDisplayName || "Faculty",
+      department: profileData.department || "Department",
+      leaveType: leaveForm.leaveType,
+      fromDate: leaveForm.fromDate,
+      toDate: leaveForm.toDate,
+      reason: leaveForm.reason.trim(),
+      alternateArrangement: leaveForm.alternateArrangement.trim(),
+      status: "Pending",
+      appliedAt: new Date().toISOString(),
     };
-    setSentMessages((previous) => [record, ...previous]);
-    setMessageSubject("");
-    setMessageBody("");
-    showToast("Message added to sent history.");
+
+    const existing = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("ajiet_leave_requests") || "[]");
+      } catch {
+        return [];
+      }
+    })();
+    const updated = [leaveRequest, ...existing];
+    localStorage.setItem("ajiet_leave_requests", JSON.stringify(updated));
+    setLeaveHistory(updated);
+    setLeaveForm({
+      leaveType: "Casual Leave",
+      fromDate: "",
+      toDate: "",
+      reason: "",
+      alternateArrangement: "",
+    });
+    showToast("Leave request submitted to the HOD.");
   };
 
   const handleTimetableUpload = (event) => {
@@ -1022,9 +1023,28 @@ export default function FacultyDashboard({
       ...prev,
       [timetableKey]: file,
     }));
+    setTimetableSubmissions((prev) => ({
+      ...prev,
+      [timetableKey]: false,
+    }));
     event.target.value = "";
     showToast(
       `Time table uploaded for ${timetableAcademicYear} (${timetableSemester} Semester).`,
+    );
+  };
+
+  const handleSubmitTimetable = () => {
+    if (!selectedTimetableFile) {
+      showToast("Upload a timetable before submitting.");
+      return;
+    }
+
+    setTimetableSubmissions((prev) => ({
+      ...prev,
+      [timetableKey]: true,
+    }));
+    showToast(
+      `Time table submitted for ${timetableAcademicYear} (${timetableSemester} Semester).`,
     );
   };
 
@@ -1038,6 +1058,160 @@ export default function FacultyDashboard({
     previewLink.rel = "noopener noreferrer";
     previewLink.click();
     window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60000);
+  };
+
+  const handleIaExcelUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet, {
+        defval: "",
+        raw: false,
+      });
+
+      if (rows.length === 0) {
+        showToast("The Excel file does not contain any student rows.");
+        event.target.value = "";
+        return;
+      }
+
+      let importedCount = 0;
+      const nextDraft = { ...iaMarksDraft };
+      const limits = { ia1: 25, ia2: 25, task1: 10, task2: 10, finalIa: 25 };
+
+      rows.forEach((row) => {
+        const normalized = Object.fromEntries(
+          Object.entries(row).map(([key, value]) => [
+            key.trim().toLowerCase().replace(/[^a-z0-9]/g, ""),
+            String(value).trim(),
+          ]),
+        );
+        const usn =
+          normalized.usn ||
+          normalized.studentid ||
+          normalized.registrationnumber ||
+          normalized.rollnumber;
+        const student = subjectRoster.find(
+          (record) =>
+            record.studentId.toLowerCase() === usn.toLowerCase(),
+        );
+        if (!student) return;
+
+        const readMark = (keys) =>
+          keys.map((key) => normalized[key]).find((value) => value !== undefined);
+        const draftKey = `${selectedSubject.id}-${student.studentId}`;
+        const current = iaMarksDraft[draftKey] || {
+          ia1: "",
+          ia2: "",
+          task1: "",
+          task2: "",
+          finalIa: "",
+        };
+
+        const imported = { ...current };
+        [
+          ["ia1", ["ia1"]],
+          ["ia2", ["ia2"]],
+          ["task1", ["task1", "taski"]],
+          ["task2", ["task2", "taskii"]],
+          ["finalIa", ["finalia", "finaliamarks"]],
+        ].forEach(([field, keys]) => {
+          const rawValue = readMark(keys);
+          if (rawValue !== undefined && rawValue !== "") {
+            const value = Number(rawValue);
+            if (Number.isFinite(value)) {
+              imported[field] = Math.max(0, Math.min(value, limits[field]));
+            }
+          }
+        });
+
+        nextDraft[draftKey] = imported;
+        importedCount += 1;
+      });
+
+      setIaMarksDraft(nextDraft);
+      setIaExcelFileName(file.name);
+      setSubjectFormStatus(
+        importedCount > 0
+          ? `Imported IA marks for ${importedCount} student${importedCount === 1 ? "" : "s"} from ${file.name}.`
+          : "No matching USN records were found in the uploaded file.",
+      );
+    } catch {
+      setSubjectFormStatus("Unable to read the uploaded Excel file. Please check the format.");
+    }
+
+    event.target.value = "";
+  };
+
+  const handleDownloadIaTemplate = () => {
+    if (!selectedSubject || subjectRoster.length === 0) return;
+
+    const templateRows = subjectRoster.map((record) => ({
+      USN: record.studentId,
+      "Student Name": record.studentName,
+      IA1: "",
+      IA2: "",
+      "Task 1": "",
+      "Task 2": "",
+      "Final IA": "",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(templateRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "IA Marks");
+    XLSX.writeFile(workbook, `${selectedSubject.code}_IA_Marks_Template.xlsx`);
+  };
+
+  const handleIaMarksSubmit = () => {
+    if (!selectedSubject || subjectRoster.length === 0) return;
+
+    const marks = subjectRoster.map((record) => {
+      const draftKey = `${selectedSubject.id}-${record.studentId}`;
+      const draft = iaMarksDraft[draftKey] || {};
+      return {
+        studentId: record.studentId,
+        studentName: record.studentName,
+        ia1: draft.ia1,
+        ia2: draft.ia2,
+        task1: draft.task1,
+        task2: draft.task2,
+        finalIa: draft.finalIa,
+      };
+    });
+
+    const submission = {
+      id: `IA-${Date.now()}`,
+      academicYear: subjectAcademicYear,
+      semester: selectedSubject.semester,
+      section: selectedSubject.section,
+      subjectCode: selectedSubject.code,
+      subjectName: selectedSubject.name,
+      facultyId: profileData.facultyId || "FACULTY",
+      facultyName: facultyDisplayName || "Faculty",
+      department: profileData.department || "Department",
+      status: "Pending",
+      submittedAt: new Date().toISOString(),
+      source: iaExcelFileName ? "Excel Upload" : "Manual Entry",
+      marks,
+    };
+
+    const existing = (() => {
+      try {
+        return JSON.parse(localStorage.getItem("ajiet_ia_submissions") || "[]");
+      } catch {
+        return [];
+      }
+    })();
+    localStorage.setItem(
+      "ajiet_ia_submissions",
+      JSON.stringify([submission, ...existing]),
+    );
+    setSubjectFormStatus(
+      "IA marks submitted successfully for HOD review.",
+    );
   };
 
   const handleViewEventReport = () => {
@@ -1176,54 +1350,111 @@ export default function FacultyDashboard({
       eventFilter === "All" || ev.category === eventFilter;
     return matchesYear && matchesCategory;
   });
-  const availableSubjectSemesters = subjectAcademicYear
-    ? Object.keys(SUBJECTS_BY_ACADEMIC_YEAR[subjectAcademicYear] || {})
-    : [];
-  const availableSubjects = subjectSemester
-    ? SUBJECTS_BY_ACADEMIC_YEAR[subjectAcademicYear]?.[subjectSemester] || []
-    : [];
+  const availableSubjectYears = [
+    ...new Set(
+      assignedSubjects
+        .map((subject) => subject.academic_year)
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => b.localeCompare(a));
+  const availableSubjectSemesters = [
+    ...new Set(
+      assignedSubjects
+        .filter((subject) => subject.academic_year === subjectAcademicYear)
+        .map((subject) => String(subject.semester)),
+    ),
+  ].sort((a, b) => Number(a) - Number(b));
+  const availableSubjects = assignedSubjects
+    .filter(
+      (subject) =>
+        subject.academic_year === subjectAcademicYear &&
+        String(subject.semester) === subjectSemester,
+    )
+    .map((subject) => ({
+      ...subject,
+      id: `${subject.subject_code}|${subject.semester}|${subject.section}|${subject.academic_year}`,
+      code: subject.subject_code,
+      name: subject.subject_name,
+    }));
   const selectedSubject = availableSubjects.find(
     (subject) => subject.id === selectedSubjectId,
   );
+  const selectedSubjectCode = selectedSubject?.code;
+  const selectedSubjectSemester = selectedSubject?.semester;
+  const selectedSubjectSection = selectedSubject?.section;
+  const selectedSubjectAcademicYear = selectedSubject?.academic_year;
+  const selectedSubjectCategory =
+    selectedSubject?.category ??
+    selectedSubject?.subject_category ??
+    selectedSubject?.subject_type ??
+    selectedSubject?.subjectType;
+  const selectedSubjectCredits =
+    selectedSubject?.credits ?? selectedSubject?.credit_count;
+  const selectedSubjectTeachingHours =
+    selectedSubject?.teaching_hours ??
+    selectedSubject?.teachingHours ??
+    selectedSubject?.hours_per_week ??
+    selectedSubject?.hoursPerWeek ??
+    selectedSubject?.total_hours ??
+    selectedSubject?.totalHours;
 
-  // Filtered Publications by Academic Year, Type, and Search query
+  useEffect(() => {
+    if (!selectedSubjectCode || !profileData.facultyId) {
+      setSubjectRoster([]);
+      setSubjectRosterError("");
+      setSubjectRosterLoading(false);
+      return undefined;
+    }
+
+    let isCurrent = true;
+    setSubjectRoster([]);
+    setSubjectRosterError("");
+    setSubjectRosterLoading(true);
+    getFacultySubjectRosterApi({
+      facultyId: profileData.facultyId,
+      subjectCode: selectedSubjectCode,
+      semester: selectedSubjectSemester,
+      section: selectedSubjectSection,
+      academicYear: selectedSubjectAcademicYear,
+    })
+      .then((students) => {
+        if (isCurrent) setSubjectRoster(students);
+      })
+      .catch((error) => {
+        if (isCurrent) {
+          setSubjectRosterError(
+            error.message || "Failed to fetch students for this subject.",
+          );
+        }
+      })
+      .finally(() => {
+        if (isCurrent) setSubjectRosterLoading(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    selectedSubjectId,
+    selectedSubjectCode,
+    selectedSubjectSemester,
+    selectedSubjectSection,
+    selectedSubjectAcademicYear,
+    profileData.facultyId,
+  ]);
+
+  // Filtered Publications by Academic Year
   const filteredPublications = publicationsList.filter((pub) => {
     const matchesYear =
       pubFilterYear === "All" || pub.academicYear === pubFilterYear;
-    const matchesType =
-      pubFilterType === "All" || pub.publicationType === pubFilterType;
-    const query = pubSearchQuery.trim().toLowerCase();
-    const matchesSearch =
-      !query ||
-      pub.titleOfPaper.toLowerCase().includes(query) ||
-      pub.author.toLowerCase().includes(query) ||
-      (pub.coAuthor && pub.coAuthor.toLowerCase().includes(query)) ||
-      pub.journalConferenceName.toLowerCase().includes(query) ||
-      pub.indexing.toLowerCase().includes(query) ||
-      pub.qFactor.toLowerCase().includes(query) ||
-      (pub.issnIsbn && pub.issnIsbn.toLowerCase().includes(query));
-    return matchesYear && matchesType && matchesSearch;
+    return matchesYear;
   });
 
-  // Filtered Patents by Academic Year, Type, Status, and Search query
+  // Filtered Patents by Academic Year
   const filteredPatents = patentsList.filter((pat) => {
     const matchesYear =
       patentFilterYear === "All" || pat.academicYear === patentFilterYear;
-    const matchesType =
-      patentFilterType === "All" || pat.patentType === patentFilterType;
-    const matchesStatus =
-      patentFilterStatus === "All" || pat.status === patentFilterStatus;
-    const query = patentSearchQuery.trim().toLowerCase();
-    const matchesSearch =
-      !query ||
-      pat.title.toLowerCase().includes(query) ||
-      pat.applicantName.toLowerCase().includes(query) ||
-      (pat.coApplicantName &&
-        pat.coApplicantName.toLowerCase().includes(query)) ||
-      pat.applicationNumber.toLowerCase().includes(query) ||
-      pat.patentType.toLowerCase().includes(query) ||
-      pat.status.toLowerCase().includes(query);
-    return matchesYear && matchesType && matchesStatus && matchesSearch;
+    return matchesYear;
   });
 
   const filteredMessageUsns = SAMPLE_STUDENT_USNS.filter(
@@ -1834,7 +2065,7 @@ export default function FacultyDashboard({
                       </button>
                     </div>
 
-                    {/* Top Filter Bar: First filter Academic Year, then Type & Search */}
+                    {/* Academic year filter */}
                     <div className="pub-filters-bar">
                       <div className="pub-filter-group">
                         <label
@@ -1857,62 +2088,6 @@ export default function FacultyDashboard({
                           <option value="2022-23">2022-23</option>
                         </select>
                       </div>
-
-                      <div className="pub-filter-group">
-                        <label
-                          className="pub-filter-label"
-                          htmlFor="filterPubType"
-                        >
-                          Type:
-                        </label>
-                        <select
-                          id="filterPubType"
-                          className="pub-filter-select"
-                          value={pubFilterType}
-                          onChange={(e) => setPubFilterType(e.target.value)}
-                        >
-                          <option value="All">All Publication Types</option>
-                          <option value="Journal">Journal</option>
-                          <option value="Conference">Conference</option>
-                          <option value="Book Chapter">Book Chapter</option>
-                        </select>
-                      </div>
-
-                      <div className="pub-filter-group pub-search-box">
-                        <Search size={14} className="pub-search-icon" />
-                        <input
-                          type="text"
-                          className="pub-search-input"
-                          placeholder="Search paper title, author, journal, DOI..."
-                          value={pubSearchQuery}
-                          onChange={(e) => setPubSearchQuery(e.target.value)}
-                        />
-                        {pubSearchQuery && (
-                          <button
-                            type="button"
-                            className="pub-search-clear"
-                            onClick={() => setPubSearchQuery("")}
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                      </div>
-
-                      {(pubFilterYear !== "All" ||
-                        pubFilterType !== "All" ||
-                        pubSearchQuery) && (
-                        <button
-                          type="button"
-                          className="pub-reset-filter-btn"
-                          onClick={() => {
-                            setPubFilterYear("All");
-                            setPubFilterType("All");
-                            setPubSearchQuery("");
-                          }}
-                        >
-                          Reset Filters
-                        </button>
-                      )}
                     </div>
 
                     {/* Add Publication Form Card */}
@@ -2308,7 +2483,7 @@ export default function FacultyDashboard({
                       </button>
                     </div>
 
-                    {/* Top Filter Bar: First filter Academic Year, then Type, Status & Search */}
+                    {/* Academic year filter */}
                     <div className="pub-filters-bar">
                       <div className="pub-filter-group">
                         <label
@@ -2331,86 +2506,6 @@ export default function FacultyDashboard({
                           <option value="2022-23">2022-23</option>
                         </select>
                       </div>
-
-                      <div className="pub-filter-group">
-                        <label
-                          className="pub-filter-label"
-                          htmlFor="filterPatentType"
-                        >
-                          Type:
-                        </label>
-                        <select
-                          id="filterPatentType"
-                          className="pub-filter-select"
-                          value={patentFilterType}
-                          onChange={(e) => setPatentFilterType(e.target.value)}
-                        >
-                          <option value="All">All Patent Types</option>
-                          <option value="Design">Design</option>
-                          <option value="Utility">Utility</option>
-                          <option value="Copyright">Copyright</option>
-                          <option value="Trademark">Trademark</option>
-                        </select>
-                      </div>
-
-                      <div className="pub-filter-group">
-                        <label
-                          className="pub-filter-label"
-                          htmlFor="filterPatentStatus"
-                        >
-                          Status:
-                        </label>
-                        <select
-                          id="filterPatentStatus"
-                          className="pub-filter-select"
-                          value={patentFilterStatus}
-                          onChange={(e) =>
-                            setPatentFilterStatus(e.target.value)
-                          }
-                        >
-                          <option value="All">All Status</option>
-                          <option value="Published">Published</option>
-                          <option value="Granted">Granted</option>
-                        </select>
-                      </div>
-
-                      <div className="pub-filter-group pub-search-box">
-                        <Search size={14} className="pub-search-icon" />
-                        <input
-                          type="text"
-                          className="pub-search-input"
-                          placeholder="Search title, applicant, application no..."
-                          value={patentSearchQuery}
-                          onChange={(e) => setPatentSearchQuery(e.target.value)}
-                        />
-                        {patentSearchQuery && (
-                          <button
-                            type="button"
-                            className="pub-search-clear"
-                            onClick={() => setPatentSearchQuery("")}
-                          >
-                            <X size={12} />
-                          </button>
-                        )}
-                      </div>
-
-                      {(patentFilterYear !== "All" ||
-                        patentFilterType !== "All" ||
-                        patentFilterStatus !== "All" ||
-                        patentSearchQuery) && (
-                        <button
-                          type="button"
-                          className="pub-reset-filter-btn"
-                          onClick={() => {
-                            setPatentFilterYear("All");
-                            setPatentFilterType("All");
-                            setPatentFilterStatus("All");
-                            setPatentSearchQuery("");
-                          }}
-                        >
-                          Reset Filters
-                        </button>
-                      )}
                     </div>
 
                     {/* Add Patent Form Card */}
@@ -4292,6 +4387,23 @@ export default function FacultyDashboard({
               </div>
 
               <div className="subject-handling-content">
+                {loading && (
+                  <div className="subject-empty-state" role="status">
+                    Loading subjects assigned by the HOD...
+                  </div>
+                )}
+                {!loading && assignedSubjectsError && (
+                  <div className="subject-empty-state" role="alert">
+                    {assignedSubjectsError}
+                  </div>
+                )}
+                {!loading &&
+                  !assignedSubjectsError &&
+                  assignedSubjects.length === 0 && (
+                    <div className="subject-empty-state" role="status">
+                      No subjects have been assigned to your faculty account by the HOD.
+                    </div>
+                  )}
                 <div className="subject-selection-grid">
                   <div className="pub-form-field">
                     <label
@@ -4304,21 +4416,19 @@ export default function FacultyDashboard({
                       id="subject-academic-year"
                       className="pub-form-input pub-form-select"
                       value={subjectAcademicYear}
+                      disabled={loading || Boolean(assignedSubjectsError) || availableSubjectYears.length === 0}
                       onChange={(event) => {
                         const academicYear = event.target.value;
-                        const semesters = SUBJECTS_BY_ACADEMIC_YEAR[
-                          academicYear
-                        ]
-                          ? Object.keys(SUBJECTS_BY_ACADEMIC_YEAR[academicYear])
-                          : [];
                         setSubjectAcademicYear(academicYear);
-                        setSubjectSemester(semesters[0] || "");
+                        setSubjectSemester("");
                         setSelectedSubjectId("");
                         setSubjectAssessmentTab("attendance");
+                        setSubjectFormStatus("");
+                        setIaExcelFileName("");
                       }}
                     >
                       <option value="">Select academic year</option>
-                      {ACADEMIC_YEAR_OPTIONS.map((year) => (
+                      {availableSubjectYears.map((year) => (
                         <option key={year} value={year}>
                           {year}
                         </option>
@@ -4337,17 +4447,23 @@ export default function FacultyDashboard({
                       id="subject-semester"
                       className="pub-form-input pub-form-select"
                       value={subjectSemester}
-                      disabled={!subjectAcademicYear}
+                      disabled={
+                        loading ||
+                        Boolean(assignedSubjectsError) ||
+                        !subjectAcademicYear
+                      }
                       onChange={(event) => {
                         setSubjectSemester(event.target.value);
                         setSelectedSubjectId("");
                         setSubjectAssessmentTab("attendance");
+                        setSubjectFormStatus("");
+                        setIaExcelFileName("");
                       }}
                     >
                       <option value="">Select semester</option>
                       {availableSubjectSemesters.map((semester) => (
                         <option key={semester} value={semester}>
-                          {semester}
+                          Semester {semester}
                         </option>
                       ))}
                     </select>
@@ -4364,26 +4480,27 @@ export default function FacultyDashboard({
                       id="subject-selection"
                       className="pub-form-input pub-form-select"
                       value={selectedSubjectId}
-                      disabled={!subjectSemester}
+                      disabled={
+                        loading ||
+                        Boolean(assignedSubjectsError) ||
+                        !subjectSemester
+                      }
                       onChange={(event) => {
                         setSelectedSubjectId(event.target.value);
                         setSubjectAssessmentTab("attendance");
+                        setSubjectFormStatus("");
+                        setIaExcelFileName("");
                       }}
                     >
                       <option value="">Select subject</option>
                       {availableSubjects.map((subject) => (
                         <option key={subject.id} value={subject.id}>
-                          {subject.code} - {subject.name}
+                          {subject.code} - {subject.name} ({subject.section})
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
-
-                <p className="subject-sample-note">
-                  Subject assignments are sample data for now and will be
-                  fetched from the HOD later.
-                </p>
 
                 {selectedSubject ? (
                   <div className="subject-assessment-panel">
@@ -4398,7 +4515,31 @@ export default function FacultyDashboard({
                       </div>
                       <div>
                         <span>Semester</span>
-                        <strong>{subjectSemester}</strong>
+                        <strong>Semester {selectedSubject.semester}</strong>
+                      </div>
+                      <div>
+                        <span>Section</span>
+                        <strong>{selectedSubject.section || "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Academic Year</span>
+                        <strong>{selectedSubject.academic_year || "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Category</span>
+                        <strong>{selectedSubjectCategory || "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Credits</span>
+                        <strong>{selectedSubjectCredits ?? "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Teaching Hours</span>
+                        <strong>{selectedSubjectTeachingHours ?? "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Curriculum Scheme</span>
+                        <strong>{selectedSubject.scheme_year ?? "—"}</strong>
                       </div>
                     </div>
 
@@ -4416,7 +4557,7 @@ export default function FacultyDashboard({
                         }
                         onClick={() => setSubjectAssessmentTab("attendance")}
                       >
-                        Attendance
+                        Attendance & Delivery Report
                       </button>
                       <button
                         type="button"
@@ -4430,69 +4571,429 @@ export default function FacultyDashboard({
                         IA Marks
                       </button>
                     </div>
+                    {subjectAssessmentTab === "attendance" ? (
+                      <form
+                        className="daily-entry-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          setSubjectFormStatus(
+                            "Attendance and daily delivery report submitted for review.",
+                          );
+                        }}
+                      >
+                        <section className="subject-entry-section">
+                          <div className="subject-entry-heading">
+                            <div>
+                              <span className="subject-entry-kicker">Daily Attendance</span>
+                              <h3>Student Attendance</h3>
+                            </div>
+                          </div>
+                          <div className="attendance-selection-grid">
+                            <label>
+                              Date
+                              <input
+                                type="date"
+                                value={attendanceDate}
+                                onChange={(event) =>
+                                  setAttendanceDate(event.target.value)
+                                }
+                              />
+                            </label>
+                            <label>
+                              Time
+                              <select
+                                value={attendanceTime}
+                                onChange={(event) => {
+                                  const period = CLASS_SCHEDULE.find(
+                                    (item) => item.time === event.target.value,
+                                  );
+                                  setAttendanceTime(event.target.value);
+                                  if (period) setAttendancePeriod(period.classNo);
+                                }}
+                              >
+                                {CLASS_SCHEDULE.map((period) => (
+                                  <option
+                                    key={period.classNo}
+                                    value={period.time}
+                                  >
+                                    {period.time}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Period
+                              <select
+                                value={attendancePeriod}
+                                onChange={(event) => {
+                                  const period = Number(event.target.value);
+                                  setAttendancePeriod(period);
+                                  setAttendanceTime(
+                                    CLASS_SCHEDULE[period - 1].time,
+                                  );
+                                }}
+                              >
+                                {CLASS_SCHEDULE.map((period) => (
+                                  <option
+                                    key={period.classNo}
+                                    value={period.classNo}
+                                  >
+                                    Period {period.classNo}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          <div className="erp-table-responsive">
+                            <table className="erp-data-table daily-attendance-table">
+                              <thead>
+                                <tr>
+                                  <th>Sl. No.</th>
+                                  <th>USN</th>
+                                  <th>Student Name</th>
+                                  <th>
+                                    Period {attendancePeriod}
+                                    <small>{attendanceTime}</small>
+                                    <small>
+                                      {new Date(
+                                        `${attendanceDate}T00:00:00`,
+                                      ).toLocaleDateString("en-IN")}
+                                    </small>
+                                    <small>P / A</small>
+                                  </th>
+                                  <th>Attendance %</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {subjectRosterLoading ? (
+                                  <tr>
+                                    <td colSpan="5">Loading enrolled students...</td>
+                                  </tr>
+                                ) : subjectRosterError ? (
+                                  <tr>
+                                    <td colSpan="5">{subjectRosterError}</td>
+                                  </tr>
+                                ) : subjectRoster.length === 0 ? (
+                                  <tr>
+                                    <td colSpan="5">
+                                      No students are enrolled in this subject for the selected semester and section.
+                                    </td>
+                                  </tr>
+                                ) : subjectRoster.map((record, index) => {
+                                  const attendanceKey = `${selectedSubject.id}-${attendanceDate}-${record.studentId}`;
+                                  const statuses =
+                                    dailyAttendanceStatus[attendanceKey] ||
+                                    ["P", "P", "P", "P", "P", "P"];
+                                  const presentCount = statuses.filter(
+                                    (status) => status === "P",
+                                  ).length;
+                                  const selectedStatus =
+                                    statuses[attendancePeriod - 1] || "P";
+                                  return (
+                                    <tr key={record.studentId}>
+                                      <td>{index + 1}</td>
+                                      <td className="cell-code">{record.studentId}</td>
+                                      <td>{record.studentName}</td>
+                                      <td>
+                                        <button
+                                          type="button"
+                                          className={`attendance-mark-button ${
+                                            selectedStatus === "P"
+                                              ? "present"
+                                              : "absent"
+                                          }`}
+                                          title="Click to toggle Present / Absent"
+                                          onClick={() =>
+                                            setDailyAttendanceStatus((current) => ({
+                                              ...current,
+                                                [attendanceKey]: (
+                                                  current[attendanceKey] || [
+                                                  "P",
+                                                  "P",
+                                                  "P",
+                                                  "P",
+                                                  "P",
+                                                  "P",
+                                                ]
+                                              ).map((value, periodIndex) =>
+                                                periodIndex === attendancePeriod - 1
+                                                  ? value === "P"
+                                                    ? "A"
+                                                    : "P"
+                                                  : value,
+                                              ),
+                                            }))
+                                          }
+                                        >
+                                          {selectedStatus}
+                                        </button>
+                                      </td>
+                                      <td>
+                                        <strong className="attendance-percent">
+                                          {((presentCount / CLASS_SCHEDULE.length) * 100).toFixed(1)}%
+                                        </strong>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </section>
 
-                    <div className="erp-table-responsive" role="tabpanel">
-                      {subjectAssessmentTab === "attendance" ? (
-                        <table className="erp-data-table">
-                          <thead>
-                            <tr>
-                              <th>Student ID</th>
-                              <th>Student Name</th>
-                              <th>Classes Held</th>
-                              <th>Classes Attended</th>
-                              <th>Attendance</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedSubject.attendanceRecords.map((record) => (
-                              <tr key={record.studentId}>
-                                <td className="cell-code">
-                                  {record.studentId}
-                                </td>
-                                <td>{record.studentName}</td>
-                                <td>{record.classesHeld}</td>
-                                <td>{record.classesAttended}</td>
-                                <td>
-                                  {(
-                                    (record.classesAttended /
-                                      record.classesHeld) *
-                                    100
-                                  ).toFixed(1)}
-                                  %
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        <table className="erp-data-table">
-                          <thead>
-                            <tr>
-                              <th>Student ID</th>
-                              <th>Student Name</th>
-                              <th>IA 1</th>
-                              <th>IA 2</th>
-                              <th>IA 3</th>
-                              <th>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedSubject.iaMarks.map((record) => (
-                              <tr key={record.studentId}>
-                                <td className="cell-code">
-                                  {record.studentId}
-                                </td>
-                                <td>{record.studentName}</td>
-                                <td>{record.ia1}</td>
-                                <td>{record.ia2}</td>
-                                <td>{record.ia3}</td>
-                                <td>{record.ia1 + record.ia2 + record.ia3}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </div>
+                        <section className="subject-entry-section lesson-entry-section">
+                          <div className="subject-entry-heading">
+                            <div>
+                              <span className="subject-entry-kicker">Lesson Plan Execution</span>
+                              <h3>Daily Delivery Report</h3>
+                            </div>
+                            <span className="delivery-period-pill">
+                              Period {attendancePeriod} · {attendanceTime}
+                            </span>
+                          </div>
+                          <div className="lesson-plan-grid">
+                            {[lessonExecution[attendancePeriod - 1]].map((lesson) => {
+                              const index = attendancePeriod - 1;
+                              return (
+                              <article className="lesson-plan-card" key={index}>
+                                <div className="lesson-card-header">
+                                  <strong>Class {index + 1}</strong>
+                                  <span>{CLASS_SCHEDULE[index].time}</span>
+                                </div>
+                                <div className="lesson-approved-plan">
+                                  <span>Planned topic</span>
+                                  <strong>{lesson.plannedTopic}</strong>
+                                  <small>Approved lesson plan: Unit {index + 1}</small>
+                                </div>
+                                <div className="lesson-entry-fields">
+                                <label>
+                                  Actual topic covered
+                                  <input
+                                    type="text"
+                                    value={lesson.actualTopic}
+                                    placeholder="Enter topic covered"
+                                    onChange={(event) =>
+                                      setLessonExecution((current) =>
+                                        current.map((item, itemIndex) =>
+                                          itemIndex === index
+                                            ? { ...item, actualTopic: event.target.value }
+                                            : item,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </label>
+                                <label>
+                                  Execution status
+                                  <select
+                                    value={lesson.status}
+                                    onChange={(event) =>
+                                      setLessonExecution((current) =>
+                                        current.map((item, itemIndex) =>
+                                          itemIndex === index
+                                            ? { ...item, status: event.target.value }
+                                            : item,
+                                        ),
+                                      )
+                                    }
+                                  >
+                                    <option value="">Select status</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Partial">Partial</option>
+                                    <option value="Not Covered">Not Covered</option>
+                                  </select>
+                                </label>
+                                <label>
+                                  Execution remarks
+                                  <textarea
+                                    rows="2"
+                                    value={lesson.remarks}
+                                    placeholder="Add remarks"
+                                    onChange={(event) =>
+                                      setLessonExecution((current) =>
+                                        current.map((item, itemIndex) =>
+                                          itemIndex === index
+                                            ? { ...item, remarks: event.target.value }
+                                            : item,
+                                        ),
+                                      )
+                                    }
+                                  />
+                                </label>
+                                </div>
+                              </article>
+                              );
+                            })}
+                          </div>
+                        </section>
+
+                        {subjectFormStatus && (
+                          <div className="subject-submit-status" role="status">
+                            <CheckCircle2 size={16} />
+                            {subjectFormStatus}
+                          </div>
+                        )}
+                        <div className="subject-form-actions">
+                          <button type="submit" className="subject-submit-button">
+                            <Check size={17} />
+                            Submit Attendance & Delivery Report
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <form
+                        className="ia-entry-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          handleIaMarksSubmit();
+                        }}
+                      >
+                        <section className="subject-entry-section ia-entry-section">
+                          <div className="subject-entry-heading">
+                            <div>
+                              <span className="subject-entry-kicker">Internal Assessment</span>
+                              <h3>IA Marks Entry</h3>
+                            </div>
+                            <span className="delivery-period-pill">Maximum marks enforced</span>
+                          </div>
+                          <div className="ia-upload-toolbar">
+                            <div className="ia-upload-copy">
+                              <strong>Upload Excel Marks</strong>
+                              <span>
+                                Upload .xlsx, .xls or .csv using USN as the matching
+                                field.
+                              </span>
+                            </div>
+                            <div className="ia-upload-actions">
+                              <button
+                                type="button"
+                                className="btn-secondary-action"
+                                onClick={handleDownloadIaTemplate}
+                                disabled={subjectRosterLoading || subjectRoster.length === 0}
+                              >
+                                <Download size={14} />
+                                <span>Download Template</span>
+                              </button>
+                              <label
+                                className="ia-upload-button"
+                                htmlFor="ia-marks-excel"
+                              >
+                                <Upload size={14} />
+                                <span>Upload Excel</span>
+                              </label>
+                              <input
+                                id="ia-marks-excel"
+                                type="file"
+                                accept=".xlsx,.xls,.csv"
+                                disabled={subjectRosterLoading || subjectRoster.length === 0}
+                                onChange={handleIaExcelUpload}
+                              />
+                            </div>
+                            {iaExcelFileName && (
+                              <p className="ia-upload-file">
+                                Imported file: <strong>{iaExcelFileName}</strong>
+                              </p>
+                            )}
+                          </div>
+                          <div className="erp-table-responsive">
+                            <table className="erp-data-table ia-marks-table">
+                              <thead>
+                                <tr>
+                                  <th>Sl. No.</th>
+                                  <th>USN</th>
+                                  <th>Student Name</th>
+                                  <th>IA1 <small>/25</small></th>
+                                  <th>IA2 <small>/25</small></th>
+                                  <th>Task 1 <small>/10</small></th>
+                                  <th>Task 2 <small>/10</small></th>
+                                  <th>Final IA <small>/25</small></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {subjectRosterLoading ? (
+                                  <tr>
+                                    <td colSpan="8">Loading enrolled students...</td>
+                                  </tr>
+                                ) : subjectRosterError ? (
+                                  <tr>
+                                    <td colSpan="8">{subjectRosterError}</td>
+                                  </tr>
+                                ) : subjectRoster.length === 0 ? (
+                                  <tr>
+                                    <td colSpan="8">
+                                      No students are enrolled in this subject for the selected semester and section.
+                                    </td>
+                                  </tr>
+                                ) : subjectRoster.map((record, index) => {
+                                  const draftKey = `${selectedSubject.id}-${record.studentId}`;
+                                  const draft = iaMarksDraft[draftKey] || {
+                                    ia1: "",
+                                    ia2: "",
+                                    task1: "",
+                                    task2: "",
+                                    finalIa: "",
+                                  };
+                                  const updateIa = (field, value, maximum) => {
+                                    const numericValue = value === "" ? "" : Math.max(0, Math.min(Number(value), maximum));
+                                    setIaMarksDraft((current) => ({
+                                      ...current,
+                                      [draftKey]: {
+                                        ...draft,
+                                        [field]: numericValue,
+                                      },
+                                    }));
+                                  };
+                                  return (
+                                    <tr key={record.studentId}>
+                                      <td>{index + 1}</td>
+                                      <td className="cell-code">{record.studentId}</td>
+                                      <td>{record.studentName}</td>
+                                      {[
+                                        ["ia1", "IA1", 25],
+                                        ["ia2", "IA2", 25],
+                                        ["task1", "Task 1", 10],
+                                        ["task2", "Task 2", 10],
+                                        ["finalIa", "Final IA", 25],
+                                      ].map(([field, label, maximum]) => (
+                                        <td key={field}>
+                                          <input
+                                            className="ia-mark-input"
+                                            type="number"
+                                            min="0"
+                                            max={maximum}
+                                            aria-label={`${label} marks for ${record.studentName}`}
+                                            value={draft[field]}
+                                            onChange={(event) =>
+                                              updateIa(field, event.target.value, maximum)
+                                            }
+                                          />
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </section>
+                        {subjectFormStatus && (
+                          <div className="subject-submit-status" role="status">
+                            <CheckCircle2 size={16} />
+                            {subjectFormStatus}
+                          </div>
+                        )}
+                        <div className="subject-form-actions">
+                          <button
+                            type="submit"
+                            className="subject-submit-button"
+                            disabled={subjectRosterLoading || subjectRoster.length === 0 || Boolean(subjectRosterError)}
+                          >
+                            <Check size={17} />
+                            Submit IA Marks
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
                 ) : (
                   <div className="subject-empty-state" role="status">
@@ -4578,16 +5079,34 @@ export default function FacultyDashboard({
                     {selectedTimetableFile
                       ? `Uploaded: ${selectedTimetableFile.name}`
                       : "No timetable uploaded for this academic year and semester."}
+                    {isTimetableSubmitted && (
+                      <span className="timetable-submitted-status">
+                        Submitted
+                      </span>
+                    )}
                   </p>
-                  <button
-                    type="button"
-                    className="btn-secondary-action"
-                    onClick={handleViewTimetable}
-                    disabled={!selectedTimetableFile}
-                  >
-                    <Eye size={14} />
-                    <span>View</span>
-                  </button>
+                  <div className="timetable-action-buttons">
+                    <button
+                      type="button"
+                      className="btn-secondary-action"
+                      onClick={handleViewTimetable}
+                      disabled={!selectedTimetableFile}
+                    >
+                      <Eye size={14} />
+                      <span>View</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-primary-action"
+                      onClick={handleSubmitTimetable}
+                      disabled={!selectedTimetableFile || isTimetableSubmitted}
+                    >
+                      <Check size={14} />
+                      <span>
+                        {isTimetableSubmitted ? "Submitted" : "Submit"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -4779,8 +5298,7 @@ export default function FacultyDashboard({
 
                   <div className="message-composer-actions">
                     <span>
-                      Messages are stored in this session until a messaging
-                      service is connected.
+                      Messages are sent through the AJIET ERP database.
                     </span>
                     <button type="submit" className="btn-primary-action">
                       <Mail size={15} />
@@ -4835,9 +5353,104 @@ export default function FacultyDashboard({
                 <div>
                   <h2 className="toolbar-heading">Leave Apply</h2>
                   <p className="toolbar-subheading">
-                    No information is available in this section yet.
+                    Submit a leave request for HOD approval.
                   </p>
                 </div>
+              </div>
+              <div className="leave-apply-layout">
+                <form className="leave-apply-form" onSubmit={handleLeaveSubmit}>
+                  <div className="leave-form-grid">
+                    <label>
+                      Leave Type
+                      <select
+                        name="leaveType"
+                        value={leaveForm.leaveType}
+                        onChange={handleLeaveFieldChange}
+                      >
+                        <option>Casual Leave</option>
+                        <option>Sick Leave</option>
+                        <option>Earned Leave</option>
+                        <option>Duty Leave</option>
+                        <option>On Duty</option>
+                      </select>
+                    </label>
+                    <label>
+                      From Date
+                      <input
+                        type="date"
+                        name="fromDate"
+                        value={leaveForm.fromDate}
+                        onChange={handleLeaveFieldChange}
+                        required
+                      />
+                    </label>
+                    <label>
+                      To Date
+                      <input
+                        type="date"
+                        name="toDate"
+                        value={leaveForm.toDate}
+                        min={leaveForm.fromDate || undefined}
+                        onChange={handleLeaveFieldChange}
+                        required
+                      />
+                    </label>
+                  </div>
+                  <label>
+                    Reason
+                    <textarea
+                      name="reason"
+                      rows="4"
+                      value={leaveForm.reason}
+                      onChange={handleLeaveFieldChange}
+                      placeholder="Enter reason for leave"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Alternate Arrangement
+                    <input
+                      name="alternateArrangement"
+                      value={leaveForm.alternateArrangement}
+                      onChange={handleLeaveFieldChange}
+                      placeholder="Name of alternate faculty or arrangement"
+                    />
+                  </label>
+                  <div className="leave-form-actions">
+                    <button type="submit" className="subject-submit-button">
+                      <Check size={16} />
+                      Submit Leave Request
+                    </button>
+                  </div>
+                </form>
+
+                <aside className="leave-history-card">
+                  <h3>Recent Requests</h3>
+                  {leaveHistory.length === 0 ? (
+                    <p className="leave-history-empty">No leave requests submitted.</p>
+                  ) : (
+                    leaveHistory
+                      .filter(
+                        (item) =>
+                          item.facultyId === profileData.facultyId ||
+                          item.facultyName === facultyDisplayName,
+                      )
+                      .slice(0, 5)
+                      .map((item) => (
+                        <div className="leave-history-item" key={item.id}>
+                          <div>
+                            <strong>{item.leaveType}</strong>
+                            <span>
+                              {item.fromDate} to {item.toDate}
+                            </span>
+                          </div>
+                          <span className={`leave-status status-${item.status.toLowerCase()}`}>
+                            {item.status}
+                          </span>
+                        </div>
+                      ))
+                  )}
+                </aside>
               </div>
             </section>
           )}

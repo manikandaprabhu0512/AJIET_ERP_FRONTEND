@@ -47,6 +47,7 @@ export default function HodDashboard({
   );
   const [selectedSemester, setSelectedSemester] = useState(3);
   const [selectedSection, setSelectedSection] = useState("Section A");
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState("2026-27");
 
   // Data
   const [faculties, setFaculties] = useState([]);
@@ -55,6 +56,39 @@ export default function HodDashboard({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', text: '' }
+  const [leaveRequests, setLeaveRequests] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ajiet_leave_requests") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [iaSubmissions, setIaSubmissions] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ajiet_ia_submissions") || "[]");
+    } catch {
+      return [];
+    }
+  });
+  const [selectedIaSubmissionId, setSelectedIaSubmissionId] = useState("");
+
+  useEffect(() => {
+    const refreshLeaveRequests = () => {
+      try {
+        setLeaveRequests(
+          JSON.parse(localStorage.getItem("ajiet_leave_requests") || "[]"),
+        );
+        setIaSubmissions(
+          JSON.parse(localStorage.getItem("ajiet_ia_submissions") || "[]"),
+        );
+      } catch {
+        setLeaveRequests([]);
+        setIaSubmissions([]);
+      }
+    };
+    window.addEventListener("storage", refreshLeaveRequests);
+    return () => window.removeEventListener("storage", refreshLeaveRequests);
+  }, []);
 
   // Institutional Live Clock
   useEffect(() => {
@@ -102,13 +136,18 @@ export default function HodDashboard({
     loadInitialData();
   }, [deptCode]);
 
-  // Fetch subjects & allocations when semester changes
+  // Fetch subjects & allocations for the selected academic year and semester
   useEffect(() => {
     async function loadSemesterData() {
       try {
         const [subList, allocList] = await Promise.all([
           getSubjectsApi(deptCode, selectedSemester),
-          getAllocationsApi(deptCode, selectedSemester, selectedSection),
+          getAllocationsApi(
+            deptCode,
+            selectedSemester,
+            selectedSection,
+            selectedAcademicYear,
+          ),
         ]);
 
         setSubjects(subList);
@@ -126,7 +165,7 @@ export default function HodDashboard({
       }
     }
     loadSemesterData();
-  }, [deptCode, selectedSemester, selectedSection]);
+  }, [deptCode, selectedSemester, selectedSection, selectedAcademicYear]);
 
   // Handle dropdown change for a subject's assigned teacher
   const handleFacultyChange = (subjectCode, facultyId) => {
@@ -149,7 +188,7 @@ export default function HodDashboard({
           subject_code: sub.subject_code,
           faculty_id: allocations[sub.subject_code],
           section: selectedSection,
-          academic_year: "2026-27",
+          academic_year: selectedAcademicYear,
         }));
 
       await saveAllocationsApi({
@@ -157,13 +196,14 @@ export default function HodDashboard({
         dept_code: deptCode,
         semester: selectedSemester,
         section: selectedSection,
+        academicYear: selectedAcademicYear,
         allocations: allocationItems,
         assignments: allocationItems,
       });
 
       setSaveStatus({
         type: "success",
-        text: `Allocations for Semester ${selectedSemester} (${selectedSection}) committed to database successfully!`,
+        text: `Allocations for ${selectedAcademicYear}, Semester ${selectedSemester} (${selectedSection}) committed to database successfully!`,
       });
 
       // Clear success notification after 4 seconds
@@ -177,6 +217,26 @@ export default function HodDashboard({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleLeaveStatusChange = (leaveId, status) => {
+    setLeaveRequests((previous) => {
+      const updated = previous.map((request) =>
+        request.id === leaveId ? { ...request, status } : request,
+      );
+      localStorage.setItem("ajiet_leave_requests", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleIaStatusChange = (submissionId, status) => {
+    setIaSubmissions((previous) => {
+      const updated = previous.map((submission) =>
+        submission.id === submissionId ? { ...submission, status } : submission,
+      );
+      localStorage.setItem("ajiet_ia_submissions", JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Stats calculation
@@ -225,15 +285,21 @@ export default function HodDashboard({
       id: "approvals",
       label: "Approvals",
       miniLabel: "Approvals",
-      subtitle: "Items requiring approval",
+      subtitle: `${iaSubmissions.filter((submission) => submission.status === "Pending").length} IA submissions`,
       icon: ClipboardCheck,
+    },
+    {
+      id: "leaveRequests",
+      label: "Leave Requests",
+      miniLabel: "Leaves",
+      subtitle: `${leaveRequests.filter((request) => request.status === "Pending").length} pending`,
+      icon: Calendar,
     },
   ];
   const placeholderTabs = {
     attendance: "Attendance",
     activities: "Other Activities",
     message: "Message",
-    approvals: "Approvals",
   };
 
   const hodName = currentUser?.name || "Dr. Ravindra K";
@@ -369,7 +435,7 @@ export default function HodDashboard({
                 </h1>
                 <p className="banner-subtitle">
                   Academic Head: <strong>{hodName}</strong> ({hodDesignation}) •
-                  Academic Year: <strong>2026-27</strong>
+                  Academic Year: <strong>{selectedAcademicYear}</strong>
                 </p>
               </div>
             </div>
@@ -483,9 +549,27 @@ export default function HodDashboard({
                   </div>
 
                   <div className="toolbar-right">
-                    <span className="badge-academic-year">
-                      Academic Year: 2026-27
-                    </span>
+                    <div className="section-dropdown-group">
+                      <label
+                        htmlFor="allocation-academic-year"
+                        className="dropdown-label"
+                      >
+                        Academic Year:
+                      </label>
+                      <select
+                        id="allocation-academic-year"
+                        className="erp-select-input"
+                        value={selectedAcademicYear}
+                        onChange={(event) =>
+                          setSelectedAcademicYear(event.target.value)
+                        }
+                      >
+                        <option value="2026-27">2026-27</option>
+                        <option value="2025-26">2025-26</option>
+                        <option value="2024-25">2024-25</option>
+                        <option value="2023-24">2023-24</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -700,6 +784,246 @@ export default function HodDashboard({
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "approvals" && (
+            <div className="erp-tab-content">
+              <div className="erp-card-container p-20">
+                <div className="roster-top-bar">
+                  <div>
+                    <h2 className="content-heading">IA Marks Approvals</h2>
+                    <p className="content-subheading">
+                      Review internal assessment marks submitted by faculty.
+                    </p>
+                  </div>
+                  <div className="badge-academic-year">
+                    {iaSubmissions.filter((submission) => submission.status === "Pending").length} Pending
+                  </div>
+                </div>
+
+                {iaSubmissions.length === 0 ? (
+                  <div className="leave-history-empty hod-leave-empty">
+                    No IA marks submissions are available.
+                  </div>
+                ) : (
+                  <div>
+                    <div className="hod-leave-table-wrap">
+                      <table className="erp-data-table hod-leave-table">
+                        <thead>
+                          <tr>
+                            <th>Faculty</th>
+                            <th>Academic Year</th>
+                            <th>Semester</th>
+                            <th>Subject</th>
+                            <th>Entry Type</th>
+                            <th>Students</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {iaSubmissions.map((submission) => (
+                            <tr key={submission.id}>
+                              <td>
+                                <strong>{submission.facultyName}</strong>
+                                <span className="hod-leave-faculty-id">
+                                  {submission.facultyId}
+                                </span>
+                              </td>
+                              <td>{submission.academicYear}</td>
+                              <td>{submission.semester}</td>
+                              <td>
+                                <strong>{submission.subjectCode}</strong>
+                                <span className="hod-leave-faculty-id">
+                                  {submission.subjectName}
+                                </span>
+                              </td>
+                              <td>{submission.source}</td>
+                              <td>{submission.marks?.length || 0}</td>
+                              <td>
+                                <span className={`leave-status status-${submission.status.toLowerCase()}`}>
+                                  {submission.status}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="hod-leave-actions">
+                                  <button
+                                    type="button"
+                                    className="hod-leave-approve"
+                                    onClick={() =>
+                                      setSelectedIaSubmissionId(
+                                        selectedIaSubmissionId === submission.id
+                                          ? ""
+                                          : submission.id,
+                                      )
+                                    }
+                                  >
+                                    {selectedIaSubmissionId === submission.id ? "Hide" : "View"}
+                                  </button>
+                                  {submission.status === "Pending" && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="hod-leave-approve"
+                                        onClick={() =>
+                                          handleIaStatusChange(submission.id, "Approved")
+                                        }
+                                      >
+                                        Approve
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="hod-leave-reject"
+                                        onClick={() =>
+                                          handleIaStatusChange(submission.id, "Rejected")
+                                        }
+                                      >
+                                        Reject
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {iaSubmissions
+                      .filter((submission) => submission.id === selectedIaSubmissionId)
+                      .map((submission) => (
+                        <div className="ia-review-details" key={submission.id}>
+                          <h3>
+                            {submission.subjectCode} - {submission.subjectName}
+                          </h3>
+                          <div className="hod-leave-table-wrap">
+                            <table className="erp-data-table hod-leave-table">
+                              <thead>
+                                <tr>
+                                  <th>Sl. No.</th>
+                                  <th>USN</th>
+                                  <th>Student Name</th>
+                                  <th>IA1 /25</th>
+                                  <th>IA2 /25</th>
+                                  <th>Task 1 /10</th>
+                                  <th>Task 2 /10</th>
+                                  <th>Final IA /25</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(submission.marks || []).map((mark, index) => (
+                                  <tr key={mark.studentId}>
+                                    <td>{index + 1}</td>
+                                    <td>{mark.studentId}</td>
+                                    <td>{mark.studentName}</td>
+                                    <td>{mark.ia1}</td>
+                                    <td>{mark.ia2}</td>
+                                    <td>{mark.task1}</td>
+                                    <td>{mark.task2}</td>
+                                    <td>{mark.finalIa}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "leaveRequests" && (
+            <div className="erp-tab-content">
+              <div className="erp-card-container p-20">
+                <div className="roster-top-bar">
+                  <div>
+                    <h2 className="content-heading">Faculty Leave Requests</h2>
+                    <p className="content-subheading">
+                      Review leave applications submitted by faculty.
+                    </p>
+                  </div>
+                  <div className="badge-academic-year">
+                    {leaveRequests.filter((request) => request.status === "Pending").length} Pending
+                  </div>
+                </div>
+
+                {leaveRequests.length === 0 ? (
+                  <div className="leave-history-empty hod-leave-empty">
+                    No faculty leave requests are available.
+                  </div>
+                ) : (
+                  <div className="hod-leave-table-wrap">
+                    <table className="erp-data-table hod-leave-table">
+                      <thead>
+                        <tr>
+                          <th>Faculty</th>
+                          <th>Leave Type</th>
+                          <th>Duration</th>
+                          <th>Reason</th>
+                          <th>Alternate Arrangement</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaveRequests.map((request) => (
+                          <tr key={request.id}>
+                            <td>
+                              <strong>{request.facultyName}</strong>
+                              <span className="hod-leave-faculty-id">
+                                {request.facultyId}
+                              </span>
+                            </td>
+                            <td>{request.leaveType}</td>
+                            <td>
+                              {request.fromDate}
+                              <br />
+                              to {request.toDate}
+                            </td>
+                            <td>{request.reason}</td>
+                            <td>{request.alternateArrangement || "—"}</td>
+                            <td>
+                              <span className={`leave-status status-${request.status.toLowerCase()}`}>
+                                {request.status}
+                              </span>
+                            </td>
+                            <td>
+                              {request.status === "Pending" ? (
+                                <div className="hod-leave-actions">
+                                  <button
+                                    type="button"
+                                    className="hod-leave-approve"
+                                    onClick={() =>
+                                      handleLeaveStatusChange(request.id, "Approved")
+                                    }
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="hod-leave-reject"
+                                    onClick={() =>
+                                      handleLeaveStatusChange(request.id, "Rejected")
+                                    }
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="hod-leave-final">Completed</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

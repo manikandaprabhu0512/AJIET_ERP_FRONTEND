@@ -573,6 +573,25 @@
   overflow-wrap: anywhere;
 }
 
+.timetable-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.timetable-submitted-status {
+  display: inline-block;
+  margin-left: 0.65rem;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.timetable-actions .btn-primary-action:disabled,
 .timetable-actions .btn-secondary-action:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -612,7 +631,7 @@
 
 .subject-selected-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
   padding: 1rem 1.15rem;
   background: #f8fafc;
@@ -659,6 +678,559 @@
 .subject-assessment-tabs button.active {
   border-bottom-color: var(--faculty-accent);
   color: var(--faculty-navy);
+}
+
+.leave-apply-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(240px, 0.7fr);
+  gap: 1rem;
+  padding: 1.25rem;
+}
+
+.leave-apply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--faculty-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.leave-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.leave-apply-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--faculty-text-sub);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.leave-apply-form input,
+.leave-apply-form select,
+.leave-apply-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--faculty-text-main);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.leave-apply-form input,
+.leave-apply-form select {
+  height: 38px;
+}
+
+.leave-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
+.leave-history-card {
+  padding: 1rem;
+  border: 1px solid var(--faculty-border);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.leave-history-card h3 {
+  margin: 0 0 0.75rem;
+  color: var(--faculty-navy);
+  font-size: 0.88rem;
+}
+
+.leave-history-empty {
+  color: var(--faculty-text-sub);
+  font-size: 0.78rem;
+}
+
+.leave-history-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+  padding: 0.65rem;
+  border: 1px solid var(--faculty-border);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.leave-history-item div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.72rem;
+}
+
+.leave-history-item span {
+  color: var(--faculty-text-sub);
+  font-size: 0.68rem;
+}
+
+.leave-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.daily-entry-form,
+.ia-entry-form {
+  background: #ffffff;
+}
+
+.subject-entry-section {
+  border-bottom: 1px solid var(--faculty-border);
+  padding: 1rem;
+}
+
+.subject-entry-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.subject-entry-heading h3 {
+  margin: 2px 0 0;
+  color: var(--faculty-navy);
+  font-size: 1rem;
+}
+
+.subject-entry-kicker {
+  color: var(--faculty-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subject-entry-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--faculty-text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.attendance-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 220px));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.attendance-selection-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--faculty-text-sub);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.attendance-selection-grid input,
+.attendance-selection-grid select {
+  height: 36px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--faculty-text-main);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0 0.55rem;
+}
+
+.daily-attendance-table th,
+.ia-marks-table th {
+  white-space: nowrap;
+  text-align: center;
+  background: #f1f5f9;
+}
+
+.daily-attendance-table {
+  border-collapse: collapse;
+  border: 1px solid var(--faculty-border-dark);
+}
+
+.daily-attendance-table th,
+.daily-attendance-table td {
+  border: 1px solid var(--faculty-border-dark);
+  padding: 0.7rem 0.75rem;
+  vertical-align: middle;
+}
+
+.subject-entry-section .erp-table-responsive {
+  max-height: 430px;
+  overflow: auto;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+
+.subject-entry-section .erp-table-responsive thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  box-shadow: 0 1px 0 var(--faculty-border-dark);
+}
+
+.daily-attendance-table td,
+.daily-attendance-table th:first-child,
+.daily-attendance-table th:nth-child(2),
+.daily-attendance-table th:nth-child(3),
+.ia-marks-table td,
+.ia-marks-table th:first-child,
+.ia-marks-table th:nth-child(2),
+.ia-marks-table th:nth-child(3) {
+  text-align: center;
+}
+
+.daily-attendance-table th small,
+.ia-marks-table th small {
+  display: block;
+  margin-top: 2px;
+  color: var(--faculty-text-sub);
+  font-size: 0.64rem;
+}
+
+.attendance-toggle {
+  display: inline-flex;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.attendance-toggle button {
+  width: 32px;
+  height: 30px;
+  border: 0;
+  border-right: 1px solid var(--faculty-border);
+  background: #ffffff;
+  color: var(--faculty-text-sub);
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.attendance-toggle button:last-child {
+  border-right: 0;
+}
+
+.attendance-toggle button.present {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.attendance-toggle button.absent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.attendance-mark-button {
+  width: 46px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.attendance-mark-button.present {
+  border-color: #bbf7d0;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.attendance-mark-button.absent {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.attendance-percent {
+  color: var(--faculty-navy);
+  white-space: nowrap;
+}
+
+.lesson-entry-section {
+  background: #fbfdff;
+}
+
+.delivery-period-pill {
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--faculty-navy);
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.lesson-plan-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.lesson-plan-card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 150px minmax(180px, 0.7fr) minmax(360px, 1.6fr);
+  align-items: start;
+  gap: 0.85rem;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+}
+
+.lesson-card-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 5px;
+  color: var(--faculty-navy);
+  font-size: 0.86rem;
+  min-height: 110px;
+  padding: 0.75rem;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  background: #eff6ff;
+}
+
+.lesson-card-header span {
+  color: var(--faculty-text-sub);
+  font-size: 0.68rem;
+}
+
+.lesson-approved-plan {
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-radius: 5px;
+  background: #f8fafc;
+  padding: 0.55rem;
+}
+
+.lesson-approved-plan span,
+.lesson-plan-card label {
+  color: var(--faculty-text-sub);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.lesson-approved-plan strong {
+  color: var(--faculty-navy);
+  font-size: 0.78rem;
+}
+
+.lesson-approved-plan small {
+  color: var(--faculty-text-sub);
+  font-size: 0.65rem;
+}
+
+.lesson-entry-fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(180px, 1fr);
+  gap: 0.75rem;
+  min-height: 128px;
+}
+
+.lesson-plan-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lesson-plan-card input,
+.lesson-plan-card select,
+.lesson-plan-card textarea,
+.ia-mark-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--faculty-text-main);
+  font: inherit;
+  font-size: 0.76rem;
+  outline: none;
+}
+
+.lesson-plan-card input,
+.lesson-plan-card select,
+.ia-mark-input {
+  height: 34px;
+  padding: 0 0.55rem;
+}
+
+.lesson-plan-card textarea {
+  resize: vertical;
+  min-height: 54px;
+  padding: 0.45rem 0.55rem;
+}
+
+.lesson-plan-card input:focus,
+.lesson-plan-card select:focus,
+.lesson-plan-card textarea:focus,
+.ia-mark-input:focus {
+  border-color: var(--faculty-accent);
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.1);
+}
+
+.ia-entry-section {
+  border-bottom: 0;
+}
+
+.ia-upload-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin: 0 1rem 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  background: #f8fbff;
+}
+
+.ia-upload-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--faculty-navy);
+  font-size: 0.78rem;
+}
+
+.ia-upload-copy span {
+  color: var(--faculty-text-sub);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.ia-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.ia-upload-actions input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ia-upload-button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--faculty-navy);
+  color: #ffffff;
+  padding: 0 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ia-upload-file {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--faculty-text-muted);
+  font-size: 0.72rem;
+}
+
+.ia-mark-input {
+  width: 74px;
+  text-align: center;
+  font-weight: 800;
+  color: var(--faculty-navy);
+}
+
+.subject-submit-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0.75rem 1rem 0;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  background: #f0fdf4;
+  color: #166534;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.subject-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+  background: #fbfdff;
+  border-top: 1px solid var(--faculty-border);
+}
+
+.subject-submit-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--faculty-navy);
+  color: #ffffff;
+  padding: 0 1rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(4, 45, 87, 0.18);
 }
 
 .subject-empty-state {
@@ -938,6 +1510,51 @@
   .subject-selection-grid,
   .subject-selected-summary {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .lesson-plan-card,
+  .lesson-entry-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .leave-apply-layout,
+  .leave-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ia-upload-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ia-upload-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .attendance-selection-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .subject-entry-heading,
+  .subject-entry-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .subject-assessment-tabs {
+    overflow-x: auto;
+  }
+
+  .subject-assessment-tabs button {
+    white-space: nowrap;
+  }
+
+  .subject-form-actions {
+    justify-content: stretch;
+  }
+
+  .subject-submit-button {
+    width: 100%;
   }
 
   .message-recipient-modes {
