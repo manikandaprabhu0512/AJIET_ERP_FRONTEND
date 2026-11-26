@@ -844,6 +844,119 @@
   color: #64748b;
 }
 
+.hod-leave-table-wrap {
+  overflow-x: auto;
+}
+
+.hod-leave-table td,
+.hod-leave-table th {
+  white-space: nowrap;
+  font-size: 0.78rem;
+}
+
+.hod-leave-faculty-id {
+  display: block;
+  margin-top: 3px;
+  color: var(--hod-text-sub);
+  font-size: 0.68rem;
+}
+
+.leave-status {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.hod-leave-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.hod-leave-actions button {
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hod-leave-approve {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #bbf7d0 !important;
+}
+
+.hod-leave-reject {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca !important;
+}
+
+.hod-leave-final {
+  color: var(--hod-text-sub);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.hod-leave-empty {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--hod-border-dark);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.ia-review-details {
+  margin-top: 1rem;
+  border: 1px solid var(--hod-border-dark);
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.ia-review-details h3 {
+  margin: 0;
+  border-bottom: 1px solid var(--hod-border);
+  background: #f8fafc;
+  color: var(--hod-navy);
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+}
+
+.ia-review-details .hod-leave-table-wrap {
+  max-height: 360px;
+  overflow: auto;
+}
+
+.ia-review-details .hod-leave-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f1f5f9;
+  border: 1px solid var(--hod-border-dark);
+}
+
 .faculty-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

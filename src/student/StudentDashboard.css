@@ -436,6 +436,112 @@
   }
 }
 
+.student-notifications-pane {
+  min-height: 0;
+}
+
+.notification-count {
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #042d57;
+  padding: 5px 9px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.student-notifications-empty {
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.student-notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.student-notification-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.85rem;
+}
+
+.student-notification-card.unread {
+  border-left-color: #0284c7;
+  background: #f8fbff;
+}
+
+.student-notification-icon {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.student-notification-content {
+  min-width: 0;
+}
+
+.student-notification-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #042d57;
+  font-size: 0.78rem;
+}
+
+.student-notification-meta time {
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+.student-notification-content h3 {
+  margin: 0.45rem 0 0.25rem;
+  color: #0f172a;
+  font-size: 0.88rem;
+}
+
+.student-notification-content p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.student-notification-content button {
+  margin-top: 0.55rem;
+  border: 0;
+  background: transparent;
+  color: #0284c7;
+  padding: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 /* Pane Header Banner */
 .pane-header-banner {
   background: #ffffff;
