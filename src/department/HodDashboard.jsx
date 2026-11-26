@@ -5,9 +5,11 @@ import Footer from "../common/Footer";
 import {
   getDepartmentOverviewApi,
   getFacultiesApi,
-  getSubjectsApi,
-  getAllocationsApi,
-  saveAllocationsApi,
+  getCurriculumSchemesApi,
+  getCurriculumSubjectsApi,
+  createCurriculumSubjectApi,
+  getSubjectAllotmentsApi,
+  createSubjectAllotmentApi,
 } from "../services/apiService";
 import {
   BookOpen,
@@ -15,15 +17,39 @@ import {
   Building2,
   CheckCircle2,
   Clock,
-  Save,
   Sparkles,
   ShieldCheck,
   RefreshCw,
+  Plus,
   ChevronRight,
   Calendar,
   MessageSquare,
   ClipboardCheck,
 } from "lucide-react";
+
+const subjectCategories = [
+  "PCC",
+  "IPCC",
+  "LAB",
+  "Ability Enhancement",
+  "Non-Credit",
+];
+const semesterOptions = Array.from({ length: 8 }, (_, index) => index + 1);
+
+const getAcademicYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 6 }, (_, index) => {
+    const startYear = currentYear - 5 + index;
+    return `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+  });
+};
+
+const isValidAcademicYear = (value) => {
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+  return Boolean(
+    match && Number(match[2]) === (Number(match[1]) + 1) % 100,
+  );
+};
 
 export default function HodDashboard({
   onLogout = () => {},
@@ -41,20 +67,45 @@ export default function HodDashboard({
   const [activeTab, setActiveTab] = useState("faculties");
 
   // Department state
-  const deptCode = currentUser?.deptCode || "EC";
+  const deptCode = (currentUser?.deptCode || "EC").trim().toUpperCase();
   const [deptName, setDeptName] = useState(
     currentUser?.deptName || "Electronics & Communication Engineering",
   );
-  const [selectedSemester, setSelectedSemester] = useState(3);
-  const [selectedSection, setSelectedSection] = useState("Section A");
+  const [academicYearOptions] = useState(getAcademicYearOptions);
+  const [academicYear, setAcademicYear] = useState(
+    () => academicYearOptions[academicYearOptions.length - 1],
+  );
 
   // Data
   const [faculties, setFaculties] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [allocations, setAllocations] = useState({}); // { subject_code: faculty_id }
+  const [curriculumSchemes, setCurriculumSchemes] = useState([]);
+  const [viewSchemeYear, setViewSchemeYear] = useState("");
+  const [viewSemester, setViewSemester] = useState("1");
+  const [viewSubjects, setViewSubjects] = useState([]);
+  const [allotmentSchemeYear, setAllotmentSchemeYear] = useState("");
+  const [allotmentSemester, setAllotmentSemester] = useState("1");
+  const [allotmentSection, setAllotmentSection] = useState("Section A");
+  const [allotmentSubjects, setAllotmentSubjects] = useState([]);
+  const [subjectAllotments, setSubjectAllotments] = useState([]);
+  const [selectedFacultyId, setSelectedFacultyId] = useState("");
+  const [selectedSubjectCode, setSelectedSubjectCode] = useState("");
+  const [isAddingSchema, setIsAddingSchema] = useState(false);
+  const [newSchemeYear, setNewSchemeYear] = useState("");
+  const [newSchemeSemester, setNewSchemeSemester] = useState("1");
+  const [subjectNumber, setSubjectNumber] = useState("1");
+  const [subjectName, setSubjectName] = useState("");
+  const [subjectCategory, setSubjectCategory] = useState("PCC");
+  const [subjectTeachingHours, setSubjectTeachingHours] = useState("");
+  const [subjectCredits, setSubjectCredits] = useState("");
   const [loading, setLoading] = useState(true);
+  const [allotmentsLoading, setAllotmentsLoading] = useState(false);
+  const [viewSubjectsLoading, setViewSubjectsLoading] = useState(false);
+  const [allotmentSubjectsLoading, setAllotmentSubjectsLoading] =
+    useState(false);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null); // { type: 'success'|'error', text: '' }
+  const [curriculumSaving, setCurriculumSaving] = useState(false);
+  const [curriculumStatus, setCurriculumStatus] = useState(null);
 
   // Institutional Live Clock
   useEffect(() => {
@@ -80,21 +131,29 @@ export default function HodDashboard({
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch initial faculties and overview
+  // Fetch department faculties, overview, and registered curriculum schemes
   useEffect(() => {
     async function loadInitialData() {
       try {
         setLoading(true);
-        const [facList, overview] = await Promise.all([
+        const [facList, overview, schemes] = await Promise.all([
           getFacultiesApi(deptCode),
           getDepartmentOverviewApi(deptCode),
+          getCurriculumSchemesApi(deptCode),
         ]);
         setFaculties(facList);
+        setCurriculumSchemes(schemes);
+        setViewSchemeYear(schemes[0] || "");
+        setAllotmentSchemeYear(schemes[0] || "");
         if (overview?.department?.dept_name) {
           setDeptName(overview.department.dept_name);
         }
       } catch (err) {
         console.error("Failed to load initial HOD data:", err);
+        setSaveStatus({
+          type: "error",
+          text: err.message || "Failed to load department data.",
+        });
       } finally {
         setLoading(false);
       }
@@ -102,89 +161,279 @@ export default function HodDashboard({
     loadInitialData();
   }, [deptCode]);
 
-  // Fetch subjects & allocations when semester changes
   useEffect(() => {
-    async function loadSemesterData() {
+    let isCurrentRequest = true;
+
+    async function loadViewSubjects() {
+      if (!viewSchemeYear) {
+        setViewSubjects([]);
+        setViewSubjectsLoading(false);
+        return;
+      }
+
       try {
-        const [subList, allocList] = await Promise.all([
-          getSubjectsApi(deptCode, selectedSemester),
-          getAllocationsApi(deptCode, selectedSemester, selectedSection),
-        ]);
-
-        setSubjects(subList);
-
-        // Map existing allocations into dictionary: { [subject_code]: faculty_id }
-        const map = {};
-        if (Array.isArray(allocList)) {
-          allocList.forEach((item) => {
-            map[item.subject_code] = item.faculty_id;
+        setViewSubjectsLoading(true);
+        const rows = await getCurriculumSubjectsApi(
+          deptCode,
+          viewSchemeYear,
+          viewSemester,
+        );
+        if (isCurrentRequest) setViewSubjects(rows);
+      } catch (err) {
+        console.error("Failed to load scheme subjects:", err);
+        if (isCurrentRequest) {
+          setViewSubjects([]);
+          setCurriculumStatus({
+            type: "error",
+            text: err.message || "Failed to load scheme subjects.",
           });
         }
-        setAllocations(map);
-      } catch (err) {
-        console.error("Failed to load semester subjects/allocations:", err);
+      } finally {
+        if (isCurrentRequest) setViewSubjectsLoading(false);
       }
     }
-    loadSemesterData();
-  }, [deptCode, selectedSemester, selectedSection]);
 
-  // Handle dropdown change for a subject's assigned teacher
-  const handleFacultyChange = (subjectCode, facultyId) => {
-    setAllocations((prev) => ({
-      ...prev,
-      [subjectCode]: facultyId || "",
-    }));
-    setSaveStatus(null);
-  };
+    loadViewSubjects();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [deptCode, viewSchemeYear, viewSemester]);
 
-  // Save allocations to backend MySQL
-  const handleSaveAllocations = async () => {
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    async function loadAllotmentSubjects() {
+      if (!allotmentSchemeYear) {
+        setAllotmentSubjects([]);
+        setAllotmentSubjectsLoading(false);
+        setSelectedSubjectCode("");
+        return;
+      }
+
+      try {
+        setAllotmentSubjectsLoading(true);
+        const rows = await getCurriculumSubjectsApi(
+          deptCode,
+          allotmentSchemeYear,
+          allotmentSemester,
+        );
+        if (isCurrentRequest) setAllotmentSubjects(rows);
+      } catch (err) {
+        console.error("Failed to load allotment subjects:", err);
+        if (isCurrentRequest) {
+          setAllotmentSubjects([]);
+          setSaveStatus({
+            type: "error",
+            text: err.message || "Failed to load subjects for allotment.",
+          });
+        }
+      } finally {
+        if (isCurrentRequest) setAllotmentSubjectsLoading(false);
+      }
+    }
+
+    loadAllotmentSubjects();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [deptCode, allotmentSchemeYear, allotmentSemester]);
+
+  // Load all subject allotments for the selected academic year.
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    async function loadYearAllotments() {
+      if (!isValidAcademicYear(academicYear)) {
+        setSubjectAllotments([]);
+        setAllotmentsLoading(false);
+        return;
+      }
+
+      try {
+        setAllotmentsLoading(true);
+        const rows = await getSubjectAllotmentsApi(deptCode, academicYear);
+        if (isCurrentRequest) setSubjectAllotments(rows);
+      } catch (err) {
+        console.error("Failed to load subject allotments:", err);
+        if (isCurrentRequest) {
+          setSubjectAllotments([]);
+          setSaveStatus({
+            type: "error",
+            text: err.message || "Failed to load subject allotments.",
+          });
+        }
+      } finally {
+        if (isCurrentRequest) setAllotmentsLoading(false);
+      }
+    }
+    loadYearAllotments();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [deptCode, academicYear]);
+
+  const handleAddAllotment = async (event) => {
+    event.preventDefault();
+
+    if (!isValidAcademicYear(academicYear)) {
+      setSaveStatus({
+        type: "error",
+        text: "Enter an academic year in YYYY-YY format.",
+      });
+      return;
+    }
+    if (
+      !selectedFacultyId ||
+      !selectedSubjectCode ||
+      !allotmentSchemeYear ||
+      !allotmentSection.trim()
+    ) {
+      setSaveStatus({
+        type: "error",
+        text: "Select a faculty member, scheme, semester and subject, and enter a section.",
+      });
+      return;
+    }
+
     try {
       setSaving(true);
       setSaveStatus(null);
-
-      const allocationItems = subjects
-        .filter((sub) => allocations[sub.subject_code])
-        .map((sub) => ({
-          subject_code: sub.subject_code,
-          faculty_id: allocations[sub.subject_code],
-          section: selectedSection,
-          academic_year: "2026-27",
-        }));
-
-      await saveAllocationsApi({
-        deptCode: deptCode,
-        dept_code: deptCode,
-        semester: selectedSemester,
-        section: selectedSection,
-        allocations: allocationItems,
-        assignments: allocationItems,
+      await createSubjectAllotmentApi({
+        deptCode,
+        academicYear,
+        facultyId: selectedFacultyId,
+        schemeYear: allotmentSchemeYear,
+        semester: Number(allotmentSemester),
+        section: allotmentSection.trim(),
+        curriculumSubjectId: Number(selectedSubjectCode),
+        allocatedBy: currentUser?.username || `HOD_${deptCode}`,
       });
-
-      setSaveStatus({
-        type: "success",
-        text: `Allocations for Semester ${selectedSemester} (${selectedSection}) committed to database successfully!`,
-      });
-
-      // Clear success notification after 4 seconds
-      setTimeout(() => setSaveStatus(null), 4000);
+      setSelectedSubjectCode("");
+      try {
+        const rows = await getSubjectAllotmentsApi(deptCode, academicYear);
+        setSubjectAllotments(rows);
+        setSaveStatus({
+          type: "success",
+          text: "Subject allotment saved successfully.",
+        });
+      } catch (refreshError) {
+        console.error("Subject allotment saved but refresh failed:", refreshError);
+        setSaveStatus({
+          type: "error",
+          text: `Allotment saved, but the list could not refresh: ${refreshError.message}`,
+        });
+      }
     } catch (err) {
-      console.error("Failed to save allocations:", err);
+      console.error("Failed to add subject allotment:", err);
       setSaveStatus({
         type: "error",
-        text: err.message || "Failed to save subject allocations.",
+        text: err.message || "Failed to add subject allotment.",
       });
     } finally {
       setSaving(false);
     }
   };
 
-  // Stats calculation
-  const totalSubjects = subjects.length;
-  const allocatedCount = subjects.filter(
-    (s) => allocations[s.subject_code],
-  ).length;
-  const pendingCount = totalSubjects - allocatedCount;
+  const handleAddCurriculumSubject = async (event) => {
+    event.preventDefault();
+    const hours = Number(subjectTeachingHours);
+    const credits = Number(subjectCredits);
+
+    if (!/^\d{2}$/.test(newSchemeYear)) {
+      setCurriculumStatus({
+        type: "error",
+        text: "Enter the two-digit scheme year, for example 21, 25, or 27.",
+      });
+      return;
+    }
+    if (!subjectName.trim()) {
+      setCurriculumStatus({
+        type: "error",
+        text: "Enter a subject name.",
+      });
+      return;
+    }
+    if (!Number.isInteger(hours) || hours < 1) {
+      setCurriculumStatus({
+        type: "error",
+        text: "Teaching hours must be a positive whole number.",
+      });
+      return;
+    }
+    if (!Number.isInteger(credits) || credits < 0) {
+      setCurriculumStatus({
+        type: "error",
+        text: "Credits must be a non-negative whole number.",
+      });
+      return;
+    }
+
+    try {
+      setCurriculumSaving(true);
+      setCurriculumStatus(null);
+      const { subject } = await createCurriculumSubjectApi({
+        deptCode,
+        schemeYear: newSchemeYear,
+        semester: Number(newSchemeSemester),
+        subjectNumber: Number(subjectNumber),
+        subjectName: subjectName.trim(),
+        subjectCategory,
+        teachingHours: hours,
+        credits,
+      });
+      setCurriculumSchemes((current) =>
+        current.includes(newSchemeYear)
+          ? current
+          : [...current, newSchemeYear].sort((a, b) => b.localeCompare(a)),
+      );
+      setViewSchemeYear(newSchemeYear);
+      setViewSemester(newSchemeSemester);
+      setAllotmentSchemeYear(newSchemeYear);
+      setAllotmentSemester(newSchemeSemester);
+      setViewSubjects((current) =>
+        current.some((item) => item.id === subject.id)
+          ? current
+          : [...current, subject].sort(
+              (a, b) => a.subject_number - b.subject_number,
+            ),
+      );
+      setAllotmentSubjects((current) =>
+        current.some((item) => item.id === subject.id)
+          ? current
+          : [...current, subject].sort(
+              (a, b) => a.subject_number - b.subject_number,
+            ),
+      );
+      setSubjectName("");
+      setSubjectTeachingHours("");
+      setSubjectCredits("");
+      setSubjectNumber((current) =>
+        Number(current) < 9 ? String(Number(current) + 1) : current,
+      );
+      setCurriculumStatus({
+        type: "success",
+        text: `${subject.subject_code} added to Scheme ${subject.scheme_year}, Semester ${subject.semester}.`,
+      });
+    } catch (err) {
+      console.error("Failed to add curriculum subject:", err);
+      setCurriculumStatus({
+        type: "error",
+        text: err.message || "Failed to add curriculum subject.",
+      });
+    } finally {
+      setCurriculumSaving(false);
+    }
+  };
+
+  const selectedFaculty = faculties.find(
+    (faculty) => faculty.faculty_id === selectedFacultyId,
+  );
+  const selectedSubject = allotmentSubjects.find(
+    (subject) => String(subject.id) === selectedSubjectCode,
+  );
+  const assignedSubjectCount = new Set(
+    subjectAllotments.map((allotment) => allotment.subject_code),
+  ).size;
   const sidebarItems = [
     {
       id: "faculties",
@@ -192,6 +441,13 @@ export default function HodDashboard({
       miniLabel: "Faculties",
       subtitle: `${faculties.length} teaching staff`,
       icon: Users,
+    },
+    {
+      id: "curriculum",
+      label: "Subjects / Schemes",
+      miniLabel: "Subjects",
+      subtitle: "Manage curriculum subjects",
+      icon: BookOpen,
     },
     {
       id: "allocation",
@@ -369,7 +625,7 @@ export default function HodDashboard({
                 </h1>
                 <p className="banner-subtitle">
                   Academic Head: <strong>{hodName}</strong> ({hodDesignation}) •
-                  Academic Year: <strong>2026-27</strong>
+                  Academic Year: <strong>{academicYear}</strong>
                 </p>
               </div>
             </div>
@@ -386,10 +642,394 @@ export default function HodDashboard({
             </div>
           </section>
 
-          {/* VIEW 1: SUBJECT ALLOCATION TAB */}
+          {activeTab === "curriculum" && (
+            <div className="erp-tab-content">
+              <div className="allocation-page-header curriculum-page-header">
+                <div>
+                  <h2 className="content-heading">Subjects / Schemes</h2>
+                  <p className="content-subheading">
+                    Maintain the department subject catalogue separately for
+                    each curriculum scheme and semester.
+                  </p>
+                </div>
+                {isAddingSchema ? (
+                  <button
+                    type="button"
+                    className="btn-erp-secondary"
+                    onClick={() => {
+                      setIsAddingSchema(false);
+                      setCurriculumStatus(null);
+                    }}
+                  >
+                    View Subjects
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-erp-primary"
+                    onClick={() => {
+                      setNewSchemeYear(viewSchemeYear);
+                      setNewSchemeSemester(viewSemester);
+                      setIsAddingSchema(true);
+                      setCurriculumStatus(null);
+                    }}
+                  >
+                    <Plus size={16} />
+                    <span>Add New Schema</span>
+                  </button>
+                )}
+              </div>
+
+              {isAddingSchema && (
+                <div className="erp-card-container curriculum-create-card">
+                  <div className="erp-card-toolbar">
+                    <div>
+                      <h3 className="content-heading">
+                        Add a Subject to a Scheme
+                      </h3>
+                      <p className="content-subheading">
+                        Enter a scheme year, semester and subject details. The
+                        course code is generated from the selected values.
+                      </p>
+                    </div>
+                  </div>
+
+                  {curriculumStatus && (
+                    <div
+                      className={`erp-toast-banner ${curriculumStatus.type}`}
+                    >
+                      {curriculumStatus.type === "success" ? (
+                        <CheckCircle2 size={18} />
+                      ) : (
+                        <Clock size={18} />
+                      )}
+                      <span>{curriculumStatus.text}</span>
+                    </div>
+                  )}
+
+                  <form
+                    className="allotment-form"
+                    onSubmit={handleAddCurriculumSubject}
+                  >
+                    <div className="allotment-form-grid">
+                      <label className="allotment-form-field">
+                        <span>Scheme Year</span>
+                        <input
+                          className="erp-select-input"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={2}
+                          pattern="[0-9]{2}"
+                          placeholder="e.g. 21"
+                          value={newSchemeYear}
+                          onChange={(event) => {
+                            setNewSchemeYear(
+                              event.target.value.replace(/\D/g, "").slice(0, 2),
+                            );
+                            setCurriculumStatus(null);
+                          }}
+                          required
+                        />
+                      </label>
+
+                      <label className="allotment-form-field">
+                        <span>Semester</span>
+                        <select
+                          className="erp-select-input"
+                          value={newSchemeSemester}
+                          onChange={(event) => {
+                            setNewSchemeSemester(event.target.value);
+                            setCurriculumStatus(null);
+                          }}
+                          required
+                        >
+                          {semesterOptions.map((semester) => (
+                            <option key={semester} value={semester}>
+                              Semester {semester}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="allotment-form-field">
+                        <span>Subject Number</span>
+                        <select
+                          className="erp-select-input"
+                          value={subjectNumber}
+                          onChange={(event) => {
+                            setSubjectNumber(event.target.value);
+                            setCurriculumStatus(null);
+                          }}
+                          required
+                        >
+                          {Array.from({ length: 9 }, (_, index) => index + 1).map(
+                            (number) => (
+                              <option key={number} value={number}>
+                                {number}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </label>
+
+                      <div className="allotment-form-field">
+                        <span>Generated Subject Code</span>
+                        <div className="allotment-readonly-field">
+                          {newSchemeYear.length === 2
+                            ? `${newSchemeYear}${deptCode}${newSchemeSemester}${subjectNumber}`
+                            : "Enter scheme year"}
+                        </div>
+                      </div>
+
+                      <label className="allotment-form-field">
+                        <span>Subject Name</span>
+                        <input
+                          className="erp-select-input"
+                          type="text"
+                          maxLength={200}
+                          value={subjectName}
+                          onChange={(event) => {
+                            setSubjectName(event.target.value);
+                            setCurriculumStatus(null);
+                          }}
+                          placeholder="Enter subject name"
+                          required
+                        />
+                      </label>
+
+                      <label className="allotment-form-field">
+                        <span>Subject Category</span>
+                        <select
+                          className="erp-select-input"
+                          value={subjectCategory}
+                          onChange={(event) => {
+                            setSubjectCategory(event.target.value);
+                            setCurriculumStatus(null);
+                          }}
+                          required
+                        >
+                          {subjectCategories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="allotment-form-field">
+                        <span>No. of Teaching Hours</span>
+                        <input
+                          className="erp-select-input"
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={subjectTeachingHours}
+                          onChange={(event) => {
+                            setSubjectTeachingHours(event.target.value);
+                            setCurriculumStatus(null);
+                          }}
+                          placeholder="Enter teaching hours"
+                          required
+                        />
+                      </label>
+
+                      <label className="allotment-form-field">
+                        <span>Credits</span>
+                        <input
+                          className="erp-select-input"
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={subjectCredits}
+                          onChange={(event) => {
+                            setSubjectCredits(event.target.value);
+                            setCurriculumStatus(null);
+                          }}
+                          placeholder="Enter credits"
+                          required
+                        />
+                      </label>
+                    </div>
+
+                    <div className="allotment-form-actions">
+                      <span className="footer-info-strip">
+                        <ShieldCheck size={16} />
+                        Subject codes follow Scheme + Department + Semester +
+                        Subject Number.
+                      </span>
+                      <button
+                        type="submit"
+                        className="btn-erp-primary"
+                        disabled={curriculumSaving}
+                      >
+                        {curriculumSaving ? (
+                          <>
+                            <RefreshCw size={16} className="animate-spin" />
+                            <span>Adding Subject...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus size={16} />
+                            <span>Add Subject</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {!isAddingSchema && curriculumStatus && (
+                <div className={`erp-toast-banner ${curriculumStatus.type}`}>
+                  {curriculumStatus.type === "success" ? (
+                    <CheckCircle2 size={18} />
+                  ) : (
+                    <Clock size={18} />
+                  )}
+                  <span>{curriculumStatus.text}</span>
+                </div>
+              )}
+
+              <div className="erp-card-container curriculum-subjects-card">
+                <div className="erp-card-toolbar">
+                  <div className="curriculum-filter-controls">
+                    <label className="allotment-form-field">
+                      <span>Scheme Year</span>
+                      <select
+                        className="erp-select-input"
+                        value={viewSchemeYear}
+                        onChange={(event) =>
+                          setViewSchemeYear(event.target.value)
+                        }
+                        disabled={curriculumSchemes.length === 0}
+                      >
+                        {curriculumSchemes.length === 0 ? (
+                          <option value="">No schemes added</option>
+                        ) : (
+                          curriculumSchemes.map((scheme) => (
+                            <option key={scheme} value={scheme}>
+                              Scheme {scheme}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </label>
+
+                    <label className="allotment-form-field">
+                      <span>Semester</span>
+                      <select
+                        className="erp-select-input"
+                        value={viewSemester}
+                        onChange={(event) =>
+                          setViewSemester(event.target.value)
+                        }
+                      >
+                        {semesterOptions.map((semester) => (
+                          <option key={semester} value={semester}>
+                            Semester {semester}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div>
+                    <h3 className="content-heading">
+                      {viewSchemeYear
+                        ? `Scheme ${viewSchemeYear} · Semester ${viewSemester}`
+                        : "Scheme subjects"}
+                    </h3>
+                    <p className="content-subheading">
+                      {viewSubjects.length} subject
+                      {viewSubjects.length === 1 ? "" : "s"} in this semester
+                    </p>
+                  </div>
+                </div>
+
+                <div className="erp-table-responsive">
+                  <table className="erp-data-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th>Subject Category</th>
+                        <th>Teaching Hours</th>
+                        <th>Credits</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewSubjectsLoading ? (
+                        <tr>
+                          <td colSpan="6" className="table-empty-notice">
+                            Loading scheme subjects...
+                          </td>
+                        </tr>
+                      ) : viewSubjects.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="table-empty-notice">
+                            {viewSchemeYear
+                              ? "No subjects have been added for this scheme and semester."
+                              : "Add a schema and its first subject to begin."}
+                          </td>
+                        </tr>
+                      ) : (
+                        viewSubjects.map((subject, index) => (
+                          <tr key={subject.id}>
+                            <td className="cell-idx">{index + 1}</td>
+                            <td>
+                              <span className="erp-code-pill">
+                                {subject.subject_code}
+                              </span>
+                            </td>
+                            <td>{subject.subject_name}</td>
+                            <td>{subject.subject_category}</td>
+                            <td>{subject.teaching_hours}</td>
+                            <td>
+                              <span className="erp-credit-badge">
+                                {subject.credits} Credits
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* VIEW 1: SUBJECT ALLOTMENT TAB */}
           {activeTab === "allocation" && (
             <div className="erp-tab-content">
-              {/* 4 Metric Stats */}
+              <div className="allocation-page-header">
+                <div>
+                  <h2 className="content-heading">Subject Allotment</h2>
+                  <p className="content-subheading">
+                    Create and review department subject allotments for the
+                    selected academic year.
+                  </p>
+                </div>
+                <label className="academic-year-field" htmlFor="academic-year">
+                  <span>Academic Year</span>
+                  <select
+                    id="academic-year"
+                    className="erp-select-input"
+                    value={academicYear}
+                    onChange={(event) => {
+                      setAcademicYear(event.target.value);
+                      setSaveStatus(null);
+                    }}
+                  >
+                    {academicYearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
               <div className="erp-stats-grid">
                 <div className="stat-card total-subjects">
                   <div className="stat-icon-box">
@@ -397,9 +1037,12 @@ export default function HodDashboard({
                   </div>
                   <div className="stat-meta">
                     <span className="stat-label">Semester Subjects</span>
-                    <strong className="stat-val">{totalSubjects}</strong>
+                    <strong className="stat-val">
+                      {allotmentSubjects.length}
+                    </strong>
                     <span className="stat-sub">
-                      Semester {selectedSemester} curriculum
+                      Scheme {allotmentSchemeYear || "—"}, Semester{" "}
+                      {allotmentSemester}
                     </span>
                   </div>
                 </div>
@@ -409,9 +1052,13 @@ export default function HodDashboard({
                     <CheckCircle2 size={20} />
                   </div>
                   <div className="stat-meta">
-                    <span className="stat-label">Assigned Subjects</span>
-                    <strong className="stat-val">{allocatedCount}</strong>
-                    <span className="stat-sub">Allocated to teachers</span>
+                    <span className="stat-label">Allotment Records</span>
+                    <strong className="stat-val">
+                      {subjectAllotments.length}
+                    </strong>
+                    <span className="stat-sub">
+                      For academic year {academicYear}
+                    </span>
                   </div>
                 </div>
 
@@ -420,9 +1067,11 @@ export default function HodDashboard({
                     <Clock size={20} />
                   </div>
                   <div className="stat-meta">
-                    <span className="stat-label">Pending Allocation</span>
-                    <strong className="stat-val">{pendingCount}</strong>
-                    <span className="stat-sub">Unmapped courses</span>
+                    <span className="stat-label">Subjects Allotted</span>
+                    <strong className="stat-val">{assignedSubjectCount}</strong>
+                    <span className="stat-sub">
+                      Unique subjects with faculty
+                    </span>
                   </div>
                 </div>
 
@@ -440,56 +1089,17 @@ export default function HodDashboard({
                 </div>
               </div>
 
-              {/* Main Subject Allocation Card */}
-              <div className="erp-card-container">
-                {/* Header Controls Bar */}
+              <div className="erp-card-container allotment-create-card">
                 <div className="erp-card-toolbar">
-                  <div className="toolbar-left">
-                    <div className="sem-tabs-segmented">
-                      <span className="segmented-label">Select Semester:</span>
-                      <button
-                        type="button"
-                        className={`segmented-tab ${selectedSemester === 3 ? "active" : ""}`}
-                        onClick={() => setSelectedSemester(3)}
-                      >
-                        Semester 3 (3rd Sem)
-                      </button>
-                      <button
-                        type="button"
-                        className={`segmented-tab ${selectedSemester === 4 ? "active" : ""}`}
-                        onClick={() => setSelectedSemester(4)}
-                      >
-                        Semester 4 (4th Sem)
-                      </button>
-                    </div>
-
-                    <div className="section-dropdown-group">
-                      <label
-                        htmlFor="section-picker"
-                        className="dropdown-label"
-                      >
-                        Section:
-                      </label>
-                      <select
-                        id="section-picker"
-                        className="erp-select-input"
-                        value={selectedSection}
-                        onChange={(e) => setSelectedSection(e.target.value)}
-                      >
-                        <option value="Section A">Section A</option>
-                        <option value="Section B">Section B</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="toolbar-right">
-                    <span className="badge-academic-year">
-                      Academic Year: 2026-27
-                    </span>
+                  <div>
+                    <h3 className="content-heading">Create an Allotment</h3>
+                    <p className="content-subheading">
+                      Select a curriculum subject and faculty for the academic
+                      year and section.
+                    </p>
                   </div>
                 </div>
 
-                {/* Status Feedback Banner */}
                 {saveStatus && (
                   <div className={`erp-toast-banner ${saveStatus.type}`}>
                     {saveStatus.type === "success" ? (
@@ -501,136 +1111,325 @@ export default function HodDashboard({
                   </div>
                 )}
 
-                {/* Subject Allocation Table */}
+                <form
+                  className="allotment-form"
+                  onSubmit={handleAddAllotment}
+                >
+                  <div className="allotment-form-grid">
+                    <label className="allotment-form-field">
+                      <span>Curriculum Scheme</span>
+                      <select
+                        className="erp-select-input"
+                        value={allotmentSchemeYear}
+                        onChange={(event) => {
+                          setAllotmentSchemeYear(event.target.value);
+                          setSelectedSubjectCode("");
+                          setSaveStatus(null);
+                        }}
+                        required
+                      >
+                        <option value="">Select scheme</option>
+                        {curriculumSchemes.map((scheme) => (
+                          <option key={scheme} value={scheme}>
+                            Scheme {scheme}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="allotment-form-field">
+                      <span>Semester</span>
+                      <select
+                        className="erp-select-input"
+                        value={allotmentSemester}
+                        onChange={(event) => {
+                          setAllotmentSemester(event.target.value);
+                          setSelectedSubjectCode("");
+                          setSaveStatus(null);
+                        }}
+                        required
+                      >
+                        {semesterOptions.map((semester) => (
+                          <option key={semester} value={semester}>
+                            Semester {semester}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="allotment-form-field">
+                      <span>Section</span>
+                      <input
+                        className="erp-select-input"
+                        type="text"
+                        maxLength={20}
+                        value={allotmentSection}
+                        onChange={(event) => {
+                          setAllotmentSection(event.target.value);
+                          setSaveStatus(null);
+                        }}
+                        placeholder="e.g. Section A"
+                        required
+                      />
+                    </label>
+
+                    <label className="allotment-form-field">
+                      <span>Subject</span>
+                      <select
+                        className="erp-select-input"
+                        value={selectedSubjectCode}
+                        onChange={(event) => {
+                          setSelectedSubjectCode(event.target.value);
+                          setSaveStatus(null);
+                        }}
+                        required
+                        disabled={!allotmentSchemeYear || allotmentSubjectsLoading}
+                      >
+                        <option value="">
+                          {allotmentSubjectsLoading
+                            ? "Loading subjects..."
+                            : "Select subject"}
+                        </option>
+                        {allotmentSubjects.map((subject) => (
+                          <option key={subject.id} value={subject.id}>
+                            {subject.subject_code} - {subject.subject_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="allotment-form-field">
+                      <span>Course ID</span>
+                      <div className="allotment-readonly-field">
+                        {selectedSubject?.subject_code || "From selected subject"}
+                      </div>
+                    </div>
+
+                    <div className="allotment-form-field">
+                      <span>Subject Name</span>
+                      <div className="allotment-readonly-field">
+                        {selectedSubject?.subject_name || "From selected subject"}
+                      </div>
+                    </div>
+
+                    <div className="allotment-form-field">
+                      <span>Subject Category</span>
+                      <div className="allotment-readonly-field">
+                        {selectedSubject?.subject_category || "From selected subject"}
+                      </div>
+                    </div>
+
+                    <div className="allotment-form-field">
+                      <span>No. of Teaching Hours</span>
+                      <div className="allotment-readonly-field">
+                        {selectedSubject?.teaching_hours ?? "From selected subject"}
+                      </div>
+                    </div>
+
+                    <div className="allotment-form-field">
+                      <span>Credits</span>
+                      <div className="allotment-readonly-field">
+                        {selectedSubject?.credits ?? "From selected subject"}
+                      </div>
+                    </div>
+
+                    <label className="allotment-form-field">
+                      <span>Faculty ID</span>
+                      <select
+                        className="erp-select-input"
+                        value={selectedFacultyId}
+                        onChange={(event) => {
+                          setSelectedFacultyId(event.target.value);
+                          setSaveStatus(null);
+                        }}
+                        required
+                      >
+                        <option value="">Select faculty ID</option>
+                        {faculties.map((faculty) => (
+                          <option
+                            key={faculty.faculty_id}
+                            value={faculty.faculty_id}
+                          >
+                            {faculty.faculty_id}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="allotment-form-field">
+                      <span>Faculty Name</span>
+                      <div className="allotment-readonly-field">
+                        {selectedFaculty?.name || "Fetched from Faculty ID"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="allotment-form-actions">
+                    <span className="footer-info-strip">
+                      <ShieldCheck size={16} />
+                      More than one faculty can be allotted to the same subject
+                      when required by the department.
+                    </span>
+                    <button
+                      type="submit"
+                      className="btn-erp-primary"
+                      disabled={
+                        saving ||
+                        loading ||
+                        faculties.length === 0 ||
+                        allotmentSubjects.length === 0 ||
+                        allotmentSubjectsLoading ||
+                        !allotmentSchemeYear ||
+                        !isValidAcademicYear(academicYear)
+                      }
+                    >
+                      {saving ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span>Adding Allotment...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus size={16} />
+                          <span>Add Allotment</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="erp-card-container allotment-records-card">
+                <div className="erp-card-toolbar">
+                  <div>
+                    <h3 className="content-heading">
+                      Allotments for {academicYear}
+                    </h3>
+                    <p className="content-subheading">
+                      {subjectAllotments.length} faculty-subject allotment
+                      {subjectAllotments.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                </div>
                 <div className="erp-table-responsive">
                   <table className="erp-data-table">
                     <thead>
                       <tr>
-                        <th style={{ width: "55px" }}>#</th>
-                        <th style={{ width: "130px" }}>Subject Code</th>
-                        <th>Course Title &amp; Category</th>
-                        <th style={{ width: "110px" }}>Credits</th>
-                        <th style={{ width: "380px" }}>
-                          Allocated Subject Teacher
-                        </th>
-                        <th style={{ width: "140px" }}>Status</th>
+                        <th>#</th>
+                        <th>Faculty ID</th>
+                        <th>Faculty Name</th>
+                        <th>Scheme</th>
+                        <th>Semester</th>
+                        <th>Section</th>
+                        <th>Course ID</th>
+                        <th>Subject Name</th>
+                        <th>Category</th>
+                        <th>Teaching Hours</th>
+                        <th>Credits</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {subjects.length === 0 ? (
+                      {allotmentsLoading ? (
                         <tr>
-                          <td colSpan="6" className="table-empty-notice">
-                            No subjects registered for Semester{" "}
-                            {selectedSemester}.
+                          <td colSpan="11" className="table-empty-notice">
+                            Loading subject allotments...
+                          </td>
+                        </tr>
+                      ) : subjectAllotments.length === 0 ? (
+                        <tr>
+                          <td colSpan="11" className="table-empty-notice">
+                            No subject allotments for this academic year yet.
                           </td>
                         </tr>
                       ) : (
-                        subjects.map((sub, idx) => {
-                          const currentAssigned =
-                            allocations[sub.subject_code] || "";
-                          const isAssigned = Boolean(currentAssigned);
-
-                          return (
-                            <tr
-                              key={sub.subject_code}
-                              className={
-                                isAssigned ? "row-completed" : "row-pending"
-                              }
-                            >
-                              <td className="cell-idx">{idx + 1}</td>
-                              <td className="cell-code">
-                                <span className="erp-code-pill">
-                                  {sub.subject_code}
-                                </span>
-                              </td>
-                              <td className="cell-name">
-                                <span className="subject-title-strong">
-                                  {sub.subject_name}
-                                </span>
-                                <span className="subject-kind-tag">
-                                  {sub.is_lab
-                                    ? "Laboratory / Practical Course"
-                                    : "Theory Core Course"}
-                                </span>
-                              </td>
-                              <td className="cell-credits">
-                                <span className="erp-credit-badge">
-                                  {sub.credits} Credits
-                                </span>
-                              </td>
-                              <td className="cell-select">
-                                <select
-                                  className={`faculty-picker-select ${isAssigned ? "state-assigned" : "state-unassigned"}`}
-                                  value={currentAssigned}
-                                  onChange={(e) =>
-                                    handleFacultyChange(
-                                      sub.subject_code,
-                                      e.target.value,
-                                    )
-                                  }
-                                >
-                                  <option value="">
-                                    -- Choose Faculty Member --
-                                  </option>
-                                  {faculties.map((f) => (
-                                    <option
-                                      key={f.faculty_id}
-                                      value={f.faculty_id}
-                                    >
-                                      {f.faculty_id} - {f.name} ({f.designation}
-                                      )
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td className="cell-status">
-                                {isAssigned ? (
-                                  <span className="status-pill assigned">
-                                    <CheckCircle2 size={13} /> Assigned
-                                  </span>
-                                ) : (
-                                  <span className="status-pill pending">
-                                    <Clock size={13} /> Pending
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })
+                        subjectAllotments.map((allotment, index) => (
+                          <tr key={allotment.allocation_id}>
+                            <td className="cell-idx">{index + 1}</td>
+                            <td>
+                              <span className="erp-code-pill">
+                                {allotment.faculty_id}
+                              </span>
+                            </td>
+                            <td>{allotment.faculty_name}</td>
+                            <td>
+                              {allotment.scheme_year
+                                ? `Scheme ${allotment.scheme_year}`
+                                : "Legacy"}
+                            </td>
+                            <td>{allotment.semester}</td>
+                            <td>{allotment.section}</td>
+                            <td>
+                              <span className="erp-code-pill">
+                                {allotment.subject_code}
+                              </span>
+                            </td>
+                            <td>{allotment.subject_name}</td>
+                            <td>
+                              {allotment.subject_category || allotment.subject_type}
+                            </td>
+                            <td>{allotment.teaching_hours}</td>
+                            <td>
+                              <span className="erp-credit-badge">
+                                {allotment.credits} Credits
+                              </span>
+                            </td>
+                          </tr>
+                        ))
                       )}
                     </tbody>
                   </table>
                 </div>
+              </div>
 
-                {/* Card Action Footer */}
-                <div className="erp-card-footer">
-                  <div className="footer-info-strip">
-                    <ShieldCheck size={16} />
-                    <span>
-                      Allocations are committed directly to MySQL and
-                      immediately synchronize with the faculty's teaching
-                      dashboard.
-                    </span>
+              <div className="erp-card-container department-faculties-card">
+                <div className="erp-card-toolbar">
+                  <div>
+                    <h3 className="content-heading">Department Faculties</h3>
+                    <p className="content-subheading">
+                      Faculty roster for {deptName}; select a faculty ID above
+                      to add an allotment.
+                    </p>
                   </div>
-
-                  <button
-                    type="button"
-                    className="btn-erp-primary"
-                    onClick={handleSaveAllocations}
-                    disabled={saving || subjects.length === 0}
-                  >
-                    {saving ? (
-                      <>
-                        <RefreshCw size={16} className="animate-spin" />
-                        <span>Committing Allocation...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save size={16} />
-                        <span>Save Semester {selectedSemester} Allocation</span>
-                      </>
-                    )}
-                  </button>
+                </div>
+                <div className="erp-table-responsive">
+                  <table className="erp-data-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Faculty ID</th>
+                        <th>Faculty Name</th>
+                        <th>Designation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loading ? (
+                        <tr>
+                          <td colSpan="4" className="table-empty-notice">
+                            Loading department faculties...
+                          </td>
+                        </tr>
+                      ) : faculties.length === 0 ? (
+                        <tr>
+                          <td colSpan="4" className="table-empty-notice">
+                            No department faculties found.
+                          </td>
+                        </tr>
+                      ) : (
+                        faculties.map((faculty, index) => (
+                          <tr key={faculty.faculty_id}>
+                            <td className="cell-idx">{index + 1}</td>
+                            <td>
+                              <span className="erp-code-pill">
+                                {faculty.faculty_id}
+                              </span>
+                            </td>
+                            <td>{faculty.name}</td>
+                            <td>{faculty.designation}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

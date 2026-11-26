@@ -57,6 +57,8 @@ const EMPTY_STUDENT_PROFILE = {
   aadhaarNumber: "",
   sslcPercentage: "",
   pucPcmPercentage: "",
+  diplomaPercentage: "",
+  ugCgpa: "",
   pucTotalPercentage: "",
   studiedKannadaInSSLC: "",
   abcId: "",
@@ -103,6 +105,16 @@ function StudentProfileDocument({
   preview = false,
   sheetRef = null,
 }) {
+  const isPostgraduate = studentData.programType === "PG";
+  const isDiplomaLateralEntry =
+    studentData.programType === "UG" &&
+    studentData.admissionQuota === "Diploma - Lateral Entry";
+  const educationScore = isPostgraduate
+    ? studentData.ugCgpa
+    : isDiplomaLateralEntry
+      ? studentData.diplomaPercentage
+      : studentData.pucPcmPercentage;
+
   return (
     <article
       className={`student-profile-document ${preview ? "student-profile-preview-page" : ""}`}
@@ -210,12 +222,14 @@ function StudentProfileDocument({
             }
           />
           <StudentProfileField
-            label="PUC / 12th PCM Percentage"
-            value={
-              studentData.pucPcmPercentage
-                ? `${studentData.pucPcmPercentage}%`
-                : ""
+            label={
+              isPostgraduate
+                ? "UG CGPA"
+                : isDiplomaLateralEntry
+                  ? "Diploma Percentage"
+                  : "PUC / 12th PCM Percentage"
             }
+            value={educationScore ? `${educationScore}${isPostgraduate ? "" : "%"}` : ""}
           />
           <StudentProfileField
             label="PUC / 12th Total Percentage"
@@ -482,6 +496,12 @@ export default function StudentDashboard({
           pucPcmPercentage: dbProfile.puc_pcm_percentage
             ? String(dbProfile.puc_pcm_percentage)
             : prev.pucPcmPercentage,
+          diplomaPercentage: dbProfile.diploma_percentage
+            ? String(dbProfile.diploma_percentage)
+            : prev.diplomaPercentage,
+          ugCgpa: dbProfile.ug_cgpa
+            ? String(dbProfile.ug_cgpa)
+            : prev.ugCgpa,
           pucTotalPercentage: dbProfile.puc_total_percentage
             ? String(dbProfile.puc_total_percentage)
             : prev.pucTotalPercentage,

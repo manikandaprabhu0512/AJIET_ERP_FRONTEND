@@ -141,6 +141,48 @@ export async function getSubjectsApi(dept = "EC", semester = null) {
   return data.subjects || [];
 }
 
+export async function getCurriculumSchemesApi(dept = "EC") {
+  const params = new URLSearchParams({ dept });
+  const res = await fetch(
+    `${API_BASE_URL}/academic/curriculum-schemes?${params.toString()}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to fetch curriculum schemes");
+  return data.schemes || [];
+}
+
+export async function getCurriculumSubjectsApi(
+  dept = "EC",
+  schemeYear,
+  semester,
+) {
+  const params = new URLSearchParams({
+    dept,
+    schemeYear,
+    semester: String(semester),
+  });
+  const res = await fetch(
+    `${API_BASE_URL}/academic/curriculum-subjects?${params.toString()}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to fetch curriculum subjects");
+  return data.subjects || [];
+}
+
+export async function createCurriculumSubjectApi(payload) {
+  const res = await fetch(`${API_BASE_URL}/academic/curriculum-subjects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to add curriculum subject");
+  return data;
+}
+
 export async function getAllocationsApi(
   dept = "EC",
   semester = 3,
@@ -163,6 +205,34 @@ export async function saveAllocationsApi(payload) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || "Failed to save allocations");
+  return data;
+}
+
+export async function getSubjectAllotmentsApi(
+  deptCode = "EC",
+  academicYear,
+) {
+  const params = new URLSearchParams({
+    dept: deptCode,
+    academicYear,
+  });
+  const res = await fetch(
+    `${API_BASE_URL}/academic/subject-allotments?${params.toString()}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to fetch subject allotments");
+  return data.allotments || [];
+}
+
+export async function createSubjectAllotmentApi(payload) {
+  const res = await fetch(`${API_BASE_URL}/academic/subject-allotments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Failed to add subject allotment");
   return data;
 }
 
