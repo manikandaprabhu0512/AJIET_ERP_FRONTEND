@@ -46,9 +46,7 @@ const getAcademicYearOptions = () => {
 
 const isValidAcademicYear = (value) => {
   const match = /^(\d{4})-(\d{2})$/.exec(value);
-  return Boolean(
-    match && Number(match[2]) === (Number(match[1]) + 1) % 100,
-  );
+  return Boolean(match && Number(match[2]) === (Number(match[1]) + 1) % 100);
 };
 
 export default function HodDashboard({
@@ -317,7 +315,10 @@ export default function HodDashboard({
           text: "Subject allotment saved successfully.",
         });
       } catch (refreshError) {
-        console.error("Subject allotment saved but refresh failed:", refreshError);
+        console.error(
+          "Subject allotment saved but refresh failed:",
+          refreshError,
+        );
         setSaveStatus({
           type: "error",
           text: `Allotment saved, but the list could not refresh: ${refreshError.message}`,
@@ -481,15 +482,21 @@ export default function HodDashboard({
       id: "approvals",
       label: "Approvals",
       miniLabel: "Approvals",
-      subtitle: "Items requiring approval",
+      subtitle: `${iaSubmissions.filter((submission) => submission.status === "Pending").length} IA submissions`,
       icon: ClipboardCheck,
+    },
+    {
+      id: "leaveRequests",
+      label: "Leave Requests",
+      miniLabel: "Leaves",
+      subtitle: `${leaveRequests.filter((request) => request.status === "Pending").length} pending`,
+      icon: Calendar,
     },
   ];
   const placeholderTabs = {
     attendance: "Attendance",
     activities: "Other Activities",
     message: "Message",
-    approvals: "Approvals",
   };
 
   const hodName = currentUser?.name || "Dr. Ravindra K";
@@ -762,13 +769,14 @@ export default function HodDashboard({
                           }}
                           required
                         >
-                          {Array.from({ length: 9 }, (_, index) => index + 1).map(
-                            (number) => (
-                              <option key={number} value={number}>
-                                {number}
-                              </option>
-                            ),
-                          )}
+                          {Array.from(
+                            { length: 9 },
+                            (_, index) => index + 1,
+                          ).map((number) => (
+                            <option key={number} value={number}>
+                              {number}
+                            </option>
+                          ))}
                         </select>
                       </label>
 
@@ -1111,10 +1119,7 @@ export default function HodDashboard({
                   </div>
                 )}
 
-                <form
-                  className="allotment-form"
-                  onSubmit={handleAddAllotment}
-                >
+                <form className="allotment-form" onSubmit={handleAddAllotment}>
                   <div className="allotment-form-grid">
                     <label className="allotment-form-field">
                       <span>Curriculum Scheme</span>
@@ -1183,7 +1188,9 @@ export default function HodDashboard({
                           setSaveStatus(null);
                         }}
                         required
-                        disabled={!allotmentSchemeYear || allotmentSubjectsLoading}
+                        disabled={
+                          !allotmentSchemeYear || allotmentSubjectsLoading
+                        }
                       >
                         <option value="">
                           {allotmentSubjectsLoading
@@ -1201,28 +1208,32 @@ export default function HodDashboard({
                     <div className="allotment-form-field">
                       <span>Course ID</span>
                       <div className="allotment-readonly-field">
-                        {selectedSubject?.subject_code || "From selected subject"}
+                        {selectedSubject?.subject_code ||
+                          "From selected subject"}
                       </div>
                     </div>
 
                     <div className="allotment-form-field">
                       <span>Subject Name</span>
                       <div className="allotment-readonly-field">
-                        {selectedSubject?.subject_name || "From selected subject"}
+                        {selectedSubject?.subject_name ||
+                          "From selected subject"}
                       </div>
                     </div>
 
                     <div className="allotment-form-field">
                       <span>Subject Category</span>
                       <div className="allotment-readonly-field">
-                        {selectedSubject?.subject_category || "From selected subject"}
+                        {selectedSubject?.subject_category ||
+                          "From selected subject"}
                       </div>
                     </div>
 
                     <div className="allotment-form-field">
                       <span>No. of Teaching Hours</span>
                       <div className="allotment-readonly-field">
-                        {selectedSubject?.teaching_hours ?? "From selected subject"}
+                        {selectedSubject?.teaching_hours ??
+                          "From selected subject"}
                       </div>
                     </div>
 
@@ -1365,7 +1376,8 @@ export default function HodDashboard({
                             </td>
                             <td>{allotment.subject_name}</td>
                             <td>
-                              {allotment.subject_category || allotment.subject_type}
+                              {allotment.subject_category ||
+                                allotment.subject_type}
                             </td>
                             <td>{allotment.teaching_hours}</td>
                             <td>
@@ -1499,6 +1511,279 @@ export default function HodDashboard({
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "approvals" && (
+            <div className="erp-tab-content">
+              <div className="erp-card-container p-20">
+                <div className="roster-top-bar">
+                  <div>
+                    <h2 className="content-heading">IA Marks Approvals</h2>
+                    <p className="content-subheading">
+                      Review internal assessment marks submitted by faculty.
+                    </p>
+                  </div>
+                  <div className="badge-academic-year">
+                    {
+                      iaSubmissions.filter(
+                        (submission) => submission.status === "Pending",
+                      ).length
+                    }{" "}
+                    Pending
+                  </div>
+                </div>
+
+                {iaSubmissions.length === 0 ? (
+                  <div className="leave-history-empty hod-leave-empty">
+                    No IA marks submissions are available.
+                  </div>
+                ) : (
+                  <div>
+                    <div className="hod-leave-table-wrap">
+                      <table className="erp-data-table hod-leave-table">
+                        <thead>
+                          <tr>
+                            <th>Faculty</th>
+                            <th>Academic Year</th>
+                            <th>Semester</th>
+                            <th>Subject</th>
+                            <th>Entry Type</th>
+                            <th>Students</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {iaSubmissions.map((submission) => (
+                            <tr key={submission.id}>
+                              <td>
+                                <strong>{submission.facultyName}</strong>
+                                <span className="hod-leave-faculty-id">
+                                  {submission.facultyId}
+                                </span>
+                              </td>
+                              <td>{submission.academicYear}</td>
+                              <td>{submission.semester}</td>
+                              <td>
+                                <strong>{submission.subjectCode}</strong>
+                                <span className="hod-leave-faculty-id">
+                                  {submission.subjectName}
+                                </span>
+                              </td>
+                              <td>{submission.source}</td>
+                              <td>{submission.marks?.length || 0}</td>
+                              <td>
+                                <span
+                                  className={`leave-status status-${submission.status.toLowerCase()}`}
+                                >
+                                  {submission.status}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="hod-leave-actions">
+                                  <button
+                                    type="button"
+                                    className="hod-leave-approve"
+                                    onClick={() =>
+                                      setSelectedIaSubmissionId(
+                                        selectedIaSubmissionId === submission.id
+                                          ? ""
+                                          : submission.id,
+                                      )
+                                    }
+                                  >
+                                    {selectedIaSubmissionId === submission.id
+                                      ? "Hide"
+                                      : "View"}
+                                  </button>
+                                  {submission.status === "Pending" && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="hod-leave-approve"
+                                        onClick={() =>
+                                          handleIaStatusChange(
+                                            submission.id,
+                                            "Approved",
+                                          )
+                                        }
+                                      >
+                                        Approve
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="hod-leave-reject"
+                                        onClick={() =>
+                                          handleIaStatusChange(
+                                            submission.id,
+                                            "Rejected",
+                                          )
+                                        }
+                                      >
+                                        Reject
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {iaSubmissions
+                      .filter(
+                        (submission) =>
+                          submission.id === selectedIaSubmissionId,
+                      )
+                      .map((submission) => (
+                        <div className="ia-review-details" key={submission.id}>
+                          <h3>
+                            {submission.subjectCode} - {submission.subjectName}
+                          </h3>
+                          <div className="hod-leave-table-wrap">
+                            <table className="erp-data-table hod-leave-table">
+                              <thead>
+                                <tr>
+                                  <th>Sl. No.</th>
+                                  <th>USN</th>
+                                  <th>Student Name</th>
+                                  <th>IA1 /25</th>
+                                  <th>IA2 /25</th>
+                                  <th>Task 1 /10</th>
+                                  <th>Task 2 /10</th>
+                                  <th>Final IA /25</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(submission.marks || []).map((mark, index) => (
+                                  <tr key={mark.studentId}>
+                                    <td>{index + 1}</td>
+                                    <td>{mark.studentId}</td>
+                                    <td>{mark.studentName}</td>
+                                    <td>{mark.ia1}</td>
+                                    <td>{mark.ia2}</td>
+                                    <td>{mark.task1}</td>
+                                    <td>{mark.task2}</td>
+                                    <td>{mark.finalIa}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "leaveRequests" && (
+            <div className="erp-tab-content">
+              <div className="erp-card-container p-20">
+                <div className="roster-top-bar">
+                  <div>
+                    <h2 className="content-heading">Faculty Leave Requests</h2>
+                    <p className="content-subheading">
+                      Review leave applications submitted by faculty.
+                    </p>
+                  </div>
+                  <div className="badge-academic-year">
+                    {
+                      leaveRequests.filter(
+                        (request) => request.status === "Pending",
+                      ).length
+                    }{" "}
+                    Pending
+                  </div>
+                </div>
+
+                {leaveRequests.length === 0 ? (
+                  <div className="leave-history-empty hod-leave-empty">
+                    No faculty leave requests are available.
+                  </div>
+                ) : (
+                  <div className="hod-leave-table-wrap">
+                    <table className="erp-data-table hod-leave-table">
+                      <thead>
+                        <tr>
+                          <th>Faculty</th>
+                          <th>Leave Type</th>
+                          <th>Duration</th>
+                          <th>Reason</th>
+                          <th>Alternate Arrangement</th>
+                          <th>Status</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leaveRequests.map((request) => (
+                          <tr key={request.id}>
+                            <td>
+                              <strong>{request.facultyName}</strong>
+                              <span className="hod-leave-faculty-id">
+                                {request.facultyId}
+                              </span>
+                            </td>
+                            <td>{request.leaveType}</td>
+                            <td>
+                              {request.fromDate}
+                              <br />
+                              to {request.toDate}
+                            </td>
+                            <td>{request.reason}</td>
+                            <td>{request.alternateArrangement || "—"}</td>
+                            <td>
+                              <span
+                                className={`leave-status status-${request.status.toLowerCase()}`}
+                              >
+                                {request.status}
+                              </span>
+                            </td>
+                            <td>
+                              {request.status === "Pending" ? (
+                                <div className="hod-leave-actions">
+                                  <button
+                                    type="button"
+                                    className="hod-leave-approve"
+                                    onClick={() =>
+                                      handleLeaveStatusChange(
+                                        request.id,
+                                        "Approved",
+                                      )
+                                    }
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="hod-leave-reject"
+                                    onClick={() =>
+                                      handleLeaveStatusChange(
+                                        request.id,
+                                        "Rejected",
+                                      )
+                                    }
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="hod-leave-final">
+                                  Completed
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -246,6 +246,29 @@ export async function getFacultyAssignedSubjectsApi(facultyId) {
   return data.assignedSubjects || [];
 }
 
+export async function getFacultySubjectRosterApi({
+  facultyId,
+  subjectCode,
+  semester,
+  section,
+  academicYear,
+}) {
+  const params = new URLSearchParams({
+    faculty_id: facultyId,
+    subject_code: subjectCode,
+    semester: String(semester),
+    section,
+    academic_year: academicYear,
+  });
+  const res = await fetch(
+    `${API_BASE_URL}/academic/faculty-subject-roster?${params.toString()}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to fetch subject student roster.");
+  return data.students || [];
+}
+
 export async function getStudentGradesApi(usn, semester = null) {
   const url = semester
     ? `${API_BASE_URL}/academic/student-grades/${usn}?semester=${semester}`
@@ -281,5 +304,48 @@ export async function addStudentActivityApi(usn, payload) {
     throw new Error(
       data.message || "Failed to submit extracurricular activity",
     );
+  return data;
+}
+
+export async function sendFacultyMessageApi(payload) {
+  const res = await fetch(`${API_BASE_URL}/academic/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to send faculty message.");
+  return data;
+}
+
+export async function getFacultyMessagesApi(facultyId) {
+  const res = await fetch(
+    `${API_BASE_URL}/academic/messages/faculty/${encodeURIComponent(facultyId)}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to fetch sent messages.");
+  return data.messages || [];
+}
+
+export async function getStudentMessagesApi(usn) {
+  const res = await fetch(
+    `${API_BASE_URL}/academic/messages/student/${encodeURIComponent(usn)}`,
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to fetch notifications.");
+  return data.messages || [];
+}
+
+export async function markStudentMessageReadApi(usn, messageId) {
+  const res = await fetch(
+    `${API_BASE_URL}/academic/messages/${messageId}/read/${encodeURIComponent(usn)}`,
+    { method: "POST" },
+  );
+  const data = await res.json();
+  if (!res.ok)
+    throw new Error(data.message || "Failed to update notification.");
   return data;
 }
