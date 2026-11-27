@@ -44,6 +44,7 @@ const EMPTY_STUDENT_PROFILE = {
   usn: "",
   branch: "",
   section: "",
+  currentSemester: "",
   enrolledYear: "",
   fullName: "",
   dob: "",
@@ -169,6 +170,10 @@ function StudentProfileDocument({
           <StudentProfileField
             label="Enrolled Year"
             value={studentData.enrolledYear}
+          />
+          <StudentProfileField
+            label="Current Semester"
+            value={studentData.currentSemester}
           />
         </StudentProfileSection>
 
@@ -459,6 +464,7 @@ export default function StudentDashboard({
       email: currentUser?.email || "",
       branch: currentUser?.branch || "",
       section: currentUser?.section || "",
+      currentSemester: currentUser?.currentSemester || "",
     };
   });
 
@@ -480,6 +486,7 @@ export default function StudentDashboard({
           usn: dbProfile.usn || prev.usn,
           branch: dbProfile.branch || prev.branch,
           section: dbProfile.section || prev.section,
+          currentSemester: dbProfile.current_semester || prev.currentSemester,
           enrolledYear: dbProfile.enrolled_year || prev.enrolledYear,
           fullName: dbProfile.full_name || prev.fullName,
           dob: dbProfile.dob ? String(dbProfile.dob).split("T")[0] : prev.dob,
