@@ -320,6 +320,8 @@ export default function StudentDashboard({
   currentUser = null,
 }) {
   const [activeTab, setActiveTab] = useState("profile"); // 'profile' | 'academics' | 'extracurricular'
+  const authToken =
+    currentUser?.token || localStorage.getItem("ajiet_auth_token") || "";
   const [isProfilePreviewOpen, setIsProfilePreviewOpen] = useState(false);
   const profilePreviewStageRef = useRef(null);
   const profilePreviewFrameRef = useRef(null);
@@ -462,15 +464,13 @@ export default function StudentDashboard({
 
   // Fetch live database record from MySQL if logged in with JWT token
   useEffect(() => {
-    const token =
-      currentUser?.token || localStorage.getItem("ajiet_auth_token");
-    if (!token) {
+    if (!authToken) {
       setIsLoadingProfile(false);
       return;
     }
 
     setIsLoadingProfile(true);
-    getProfileApi(token)
+    getProfileApi(authToken)
       .then((dbProfile) => {
         if (!dbProfile) return;
         setStudentData((prev) => ({
@@ -545,17 +545,21 @@ export default function StudentDashboard({
       .finally(() => {
         setIsLoadingProfile(false);
       });
-  }, [currentUser]);
+  }, [authToken]);
 
   // Fetch grade ledger whenever academics tab is active or semester selection changes
   useEffect(() => {
     if (activeTab !== "academics") return;
     const usn = studentData.usn || currentUser?.username;
     if (!usn) return;
+    if (!authToken) {
+      setGradesError("Your session has expired. Please sign in again.");
+      return;
+    }
 
     setGradesLoading(true);
     setGradesError(null);
-    getStudentGradesApi(usn, selectedSemester)
+    getStudentGradesApi(usn, selectedSemester, authToken)
       .then((data) => {
         setAcademicData(data);
         // Auto-select first available semester if none chosen
@@ -574,7 +578,7 @@ export default function StudentDashboard({
         setGradesLoading(false);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, selectedSemester, studentData.usn]);
+  }, [activeTab, selectedSemester, studentData.usn, authToken]);
 
   useEffect(() => {
     const usn = studentData.usn || currentUser?.username;
@@ -1042,6 +1046,8 @@ export default function StudentDashboard({
                 academicData &&
                 (() => {
                   const records = academicData.records || [];
+                  const facultyAssessments =
+                    academicData.facultyAssessments || [];
                   const summary = academicData.summary || {};
                   const availableSems = academicData.availableSemesters || [];
                   const hasBacklog = records.some(
@@ -1213,8 +1219,92 @@ export default function StudentDashboard({
                         </div>
                       </div>
 
-                      {/* ── Official VTU Grade Table ── */}
-                      <div className="grade-ledger-wrap">
+                      <div className="grade-ledger-wrap faculty-assessments-wrap">
+                        <div className="grade-ledger-title-bar">
+                          <div className="ledger-title-left">
+                            <span className="ledger-dept-label">
+                              Attendance &amp; IA Marks Report
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grade-table-scroll-wrap">
+                          <table className="vtu-grade-table faculty-assessment-table">
+                            <thead>
+                              <tr>
+                                <th>Academic Year</th>
+                                <th>Section</th>
+                                <th>Subject Code</th>
+                                <th>Subject</th>
+                                <th>Attendance (P / Total)</th>
+                                <th>Attendance %</th>
+                                <th>IA1 /25</th>
+                                <th>IA2 /25</th>
+                                <th>Task 1 /10</th>
+                                <th>Task 2 /10</th>
+                                <th>Final IA /25</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {facultyAssessments.length === 0 ? (
+                                <tr>
+                                  <td colSpan="11" className="td-empty-state">
+                                    No faculty attendance or IA submissions are
+                                    available for Semester {selectedSemester}.
+                                  </td>
+                                </tr>
+                              ) : (
+                                facultyAssessments.map((assessment) => (
+                                  <tr
+                                    key={`${assessment.academicYear}-${assessment.section}-${assessment.subjectCode}`}
+                                  >
+                                    <td>{assessment.academicYear}</td>
+                                    <td>{assessment.section}</td>
+                                    <td className="td-center">
+                                      <span className="subject-code-badge">
+                                        {assessment.subjectCode}
+                                      </span>
+                                    </td>
+                                    <td className="td-subject-name">
+                                      {assessment.subjectName || "—"}
+                                    </td>
+                                    <td className="td-center">
+                                      {assessment.attendedPeriodCount} /{" "}
+                                      {assessment.periodCount}
+                                    </td>
+                                    <td className="td-center">
+                                      {assessment.attendancePercentage == null
+                                        ? "—"
+                                        : `${Number(assessment.attendancePercentage).toFixed(1)}%`}
+                                    </td>
+                                    <td className="td-center marks-val">
+                                      {assessment.ia1 ?? "—"}
+                                    </td>
+                                    <td className="td-center marks-val">
+                                      {assessment.ia2 ?? "—"}
+                                    </td>
+                                    <td className="td-center marks-val">
+                                      {assessment.task1 ?? "—"}
+                                    </td>
+                                    <td className="td-center marks-val">
+                                      {assessment.task2 ?? "—"}
+                                    </td>
+                                    <td className="td-center marks-val">
+                                      {assessment.finalIa ?? "—"}
+                                    </td>
+                                  </tr>
+                                ))
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                        <p className="faculty-assessment-note">
+                          Attendance totals include periods submitted by faculty
+                          for this subject.
+                        </p>
+                      </div>
+
+                      {/* ── Official VTU Grade Table (temporarily hidden) ── */}
+                      <div className="grade-ledger-wrap" hidden>
                         {/* Dark Header Bar */}
                         <div className="grade-ledger-title-bar">
                           <div className="ledger-title-left">
@@ -1222,7 +1312,7 @@ export default function StudentDashboard({
                               Dept. of Electronics &amp; Communication
                               Engineering
                             </span>
-                          </div>
+                            </div>
                           {/* <div className="ledger-right-pills">
                           <span className="ledger-pill">USN: {studentData.usn || currentUser?.username}</span>
                           <span className="ledger-pill ledger-pill-accent">
