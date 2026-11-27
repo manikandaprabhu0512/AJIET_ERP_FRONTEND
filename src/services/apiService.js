@@ -150,6 +150,22 @@ export async function getHodStudentsApi(token, filters = {}) {
   return data;
 }
 
+export async function getHodStudentAssessmentReportApi(token, usn) {
+  const res = await fetch(
+    `${API_BASE_URL}/academic/hod/students/${encodeURIComponent(usn)}/assessment-report`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(
+      data.message || "Failed to fetch the student's attendance and IA report.",
+    );
+  }
+  return data;
+}
+
 export async function getSubjectsApi(dept = "EC", semester = null) {
   const url = semester
     ? `${API_BASE_URL}/academic/subjects?dept=${dept}&semester=${semester}`

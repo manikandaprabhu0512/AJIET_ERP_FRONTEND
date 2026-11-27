@@ -6,6 +6,7 @@ import {
   getDepartmentOverviewApi,
   getFacultiesApi,
   getHodStudentsApi,
+  getHodStudentAssessmentReportApi,
   getCurriculumSchemesApi,
   getCurriculumSubjectsApi,
   createCurriculumSubjectApi,
@@ -194,6 +195,14 @@ export default function HodDashboard({
   const [studentYearsLoading, setStudentYearsLoading] = useState(false);
   const [studentListError, setStudentListError] = useState("");
   const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
+  const [studentProfileTab, setStudentProfileTab] = useState("profile");
+  const [studentAssessmentReport, setStudentAssessmentReport] = useState(null);
+  const [studentAssessmentReportSemester, setStudentAssessmentReportSemester] =
+    useState("");
+  const [studentAssessmentReportLoading, setStudentAssessmentReportLoading] =
+    useState(false);
+  const [studentAssessmentReportError, setStudentAssessmentReportError] =
+    useState("");
   const [iaSubmissions] = useState([]);
   const [leaveRequests] = useState([]);
   const [selectedIaSubmissionId, setSelectedIaSubmissionId] = useState("");
@@ -395,6 +404,47 @@ export default function HodDashboard({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedStudentProfile]);
+
+  useEffect(() => {
+    if (
+      !selectedStudentProfile ||
+      studentProfileTab !== "report" ||
+      !authToken
+    ) {
+      return undefined;
+    }
+
+    let isCurrentRequest = true;
+    async function loadStudentAssessmentReport() {
+      try {
+        const report = await getHodStudentAssessmentReportApi(
+          authToken,
+          selectedStudentProfile.usn,
+        );
+        if (isCurrentRequest) {
+          setStudentAssessmentReport(report);
+          const semesters = report.availableSemesters || [];
+          setStudentAssessmentReportSemester(
+            semesters.length ? String(semesters[0]) : "",
+          );
+        }
+      } catch (error) {
+        if (isCurrentRequest) {
+          setStudentAssessmentReport(null);
+          setStudentAssessmentReportError(
+            error.message || "Failed to fetch the attendance and IA report.",
+          );
+        }
+      } finally {
+        if (isCurrentRequest) setStudentAssessmentReportLoading(false);
+      }
+    }
+
+    loadStudentAssessmentReport();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [authToken, selectedStudentProfile, studentProfileTab]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -764,6 +814,11 @@ export default function HodDashboard({
       .slice(0, 2)
       .join("")
       .toUpperCase() || "RK";
+  const studentAssessmentReportRows =
+    studentAssessmentReport?.facultyAssessments?.filter(
+      (assessment) =>
+        String(assessment.semester) === studentAssessmentReportSemester,
+    ) || [];
 
   return (
     <div className="erp-portal-container">
@@ -1938,7 +1993,14 @@ export default function HodDashboard({
                               <button
                                 type="button"
                                 className="student-profile-view-button"
-                                onClick={() => setSelectedStudentProfile(student)}
+                                onClick={() => {
+                                  setSelectedStudentProfile(student);
+                                  setStudentProfileTab("profile");
+                                  setStudentAssessmentReport(null);
+                                  setStudentAssessmentReportSemester("");
+                                  setStudentAssessmentReportError("");
+                                  setStudentAssessmentReportLoading(false);
+                                }}
                                 aria-label={`View profile for ${student.full_name}`}
                               >
                                 <Eye size={15} />
@@ -2058,41 +2120,213 @@ export default function HodDashboard({
                       </button>
                     </div>
 
-                    <div className="student-profile-modal-content">
-                      {studentProfileSections.map((section) => (
-                        <section
-                          className="student-profile-detail-section"
-                          key={section.title}
-                        >
-                          <h3>{section.title}</h3>
-                          <dl>
-                            {section.fields.map(([field, label]) => {
-                              const value = selectedStudentProfile[field];
-                              const isEmpty =
-                                value === null ||
-                                value === undefined ||
-                                value === "";
-                              const displayValue = isEmpty
-                                ? "Not provided"
-                                : field.endsWith("_percentage")
-                                  ? `${value}%`
-                                  : field === "dob"
-                                    ? String(value).slice(0, 10)
-                                    : String(value);
-                              return (
-                                <div
-                                  className="student-profile-detail-item"
-                                  key={field}
+                    <nav
+                      className="student-profile-tabs"
+                      role="tablist"
+                      aria-label="Student profile sections"
+                    >
+                      <button
+                        type="button"
+                        role="tab"
+                        id="student-profile-tab"
+                        aria-selected={studentProfileTab === "profile"}
+                        className={
+                          studentProfileTab === "profile" ? "active" : ""
+                        }
+                        onClick={() => setStudentProfileTab("profile")}
+                      >
+                        Profile
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        id="student-report-tab"
+                        aria-selected={studentProfileTab === "report"}
+                        className={
+                          studentProfileTab === "report" ? "active" : ""
+                        }
+                        onClick={() => {
+                          if (studentProfileTab === "report") return;
+                          setStudentProfileTab("report");
+                          setStudentAssessmentReport(null);
+                          setStudentAssessmentReportSemester("");
+                          setStudentAssessmentReportError(
+                            authToken
+                              ? ""
+                              : "Your session is unavailable. Sign in again to view this report.",
+                          );
+                          setStudentAssessmentReportLoading(Boolean(authToken));
+                        }}
+                      >
+                        Attendance &amp; IA Report
+                      </button>
+                    </nav>
+
+                    {studentProfileTab === "profile" ? (
+                      <div
+                        className="student-profile-modal-content"
+                        role="tabpanel"
+                        aria-labelledby="student-profile-tab"
+                      >
+                        {studentProfileSections.map((section) => (
+                          <section
+                            className="student-profile-detail-section"
+                            key={section.title}
+                          >
+                            <h3>{section.title}</h3>
+                            <dl>
+                              {section.fields.map(([field, label]) => {
+                                const value = selectedStudentProfile[field];
+                                const isEmpty =
+                                  value === null ||
+                                  value === undefined ||
+                                  value === "";
+                                const displayValue = isEmpty
+                                  ? "Not provided"
+                                  : field.endsWith("_percentage")
+                                    ? `${value}%`
+                                    : field === "dob"
+                                      ? String(value).slice(0, 10)
+                                      : String(value);
+                                return (
+                                  <div
+                                    className="student-profile-detail-item"
+                                    key={field}
+                                  >
+                                    <dt>{label}</dt>
+                                    <dd>{displayValue}</dd>
+                                  </div>
+                                );
+                              })}
+                            </dl>
+                          </section>
+                        ))}
+                      </div>
+                    ) : (
+                      <div
+                        className="student-assessment-report-content"
+                        role="tabpanel"
+                        aria-labelledby="student-report-tab"
+                      >
+                        {studentAssessmentReportLoading ? (
+                          <div className="student-report-message">
+                            Loading attendance and IA report...
+                          </div>
+                        ) : studentAssessmentReportError ? (
+                          <div
+                            className="student-report-message error"
+                            role="alert"
+                          >
+                            {studentAssessmentReportError}
+                          </div>
+                        ) : !studentAssessmentReport?.availableSemesters
+                            ?.length ? (
+                          <div className="student-report-message">
+                            No attendance or IA reports are available for this
+                            student yet.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="student-report-toolbar">
+                              <div>
+                                <h3>Attendance &amp; IA Marks Report</h3>
+                                <p>
+                                  Semester-wise attendance and marks submitted
+                                  by faculty.
+                                </p>
+                              </div>
+                              <label>
+                                Semester
+                                <select
+                                  value={studentAssessmentReportSemester}
+                                  onChange={(event) =>
+                                    setStudentAssessmentReportSemester(
+                                      event.target.value,
+                                    )
+                                  }
                                 >
-                                  <dt>{label}</dt>
-                                  <dd>{displayValue}</dd>
-                                </div>
-                              );
-                            })}
-                          </dl>
-                        </section>
-                      ))}
-                    </div>
+                                  {studentAssessmentReport.availableSemesters.map(
+                                    (semester) => (
+                                      <option
+                                        key={semester}
+                                        value={semester}
+                                      >
+                                        Semester {semester}
+                                      </option>
+                                    ),
+                                  )}
+                                </select>
+                              </label>
+                            </div>
+
+                            {studentAssessmentReportRows.length === 0 ? (
+                              <div className="student-report-message">
+                                No attendance or IA records are available for
+                                Semester {studentAssessmentReportSemester}.
+                              </div>
+                            ) : (
+                              <div className="student-assessment-report-table-wrap">
+                                <table className="erp-data-table student-assessment-report-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Academic Year</th>
+                                      <th>Section</th>
+                                      <th>Subject Code</th>
+                                      <th>Subject</th>
+                                      <th>Attendance (P / Total)</th>
+                                      <th>Attendance %</th>
+                                      <th>IA1 /25</th>
+                                      <th>IA2 /25</th>
+                                      <th>Task 1 /10</th>
+                                      <th>Task 2 /10</th>
+                                      <th>Final IA /25</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {studentAssessmentReportRows.map(
+                                      (assessment) => (
+                                        <tr
+                                          key={`${assessment.academicYear}-${assessment.section}-${assessment.subjectCode}`}
+                                        >
+                                          <td>{assessment.academicYear}</td>
+                                          <td>{assessment.section}</td>
+                                          <td className="cell-code">
+                                            {assessment.subjectCode}
+                                          </td>
+                                          <td>
+                                            {assessment.subjectName || "—"}
+                                          </td>
+                                          <td>
+                                            {assessment.attendedPeriodCount ??
+                                              0}{" "}
+                                            / {assessment.periodCount ?? 0}
+                                          </td>
+                                          <td>
+                                            {assessment.attendancePercentage ==
+                                            null
+                                              ? "—"
+                                              : `${Number(assessment.attendancePercentage).toFixed(1)}%`}
+                                          </td>
+                                          <td>{assessment.ia1 ?? "—"}</td>
+                                          <td>{assessment.ia2 ?? "—"}</td>
+                                          <td>{assessment.task1 ?? "—"}</td>
+                                          <td>{assessment.task2 ?? "—"}</td>
+                                          <td>{assessment.finalIa ?? "—"}</td>
+                                        </tr>
+                                      ),
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                            <p className="student-report-note">
+                              Attendance totals include periods submitted by
+                              faculty for this subject.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </section>
                 </div>
               )}
