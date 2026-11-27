@@ -1395,7 +1395,7 @@
 .student-profile-modal {
   display: flex;
   flex-direction: column;
-  width: min(940px, 100%);
+  width: min(1180px, 100%);
   max-height: min(90vh, 900px);
   overflow: hidden;
   border-radius: 12px;
@@ -1447,12 +1447,112 @@
   color: var(--hod-navy);
 }
 
+.student-profile-tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--hod-border);
+}
+
+.student-profile-tabs button {
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--hod-text-sub);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.student-profile-tabs button.active {
+  border-bottom-color: var(--hod-accent);
+  color: var(--hod-accent);
+}
+
 .student-profile-modal-content {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   overflow-y: auto;
   padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.student-assessment-report-content {
+  overflow: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.student-report-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.student-report-toolbar h3 {
+  margin: 0;
+  color: var(--hod-navy);
+  font-size: 1rem;
+}
+
+.student-report-toolbar p {
+  margin: 0.3rem 0 0;
+  color: var(--hod-text-sub);
+  font-size: 0.78rem;
+}
+
+.student-report-toolbar label {
+  display: grid;
+  min-width: 180px;
+  gap: 0.35rem;
+  color: var(--hod-text-sub);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.student-report-toolbar select {
+  min-height: 38px;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--hod-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--hod-text-main);
+  font: inherit;
+}
+
+.student-assessment-report-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--hod-border);
+  border-radius: 8px;
+}
+
+.student-assessment-report-table {
+  min-width: 980px;
+  width: 100%;
+}
+
+.student-report-message {
+  padding: 1.25rem;
+  border: 1px solid var(--hod-border);
+  border-radius: 8px;
+  color: var(--hod-text-sub);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.student-report-message.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.student-report-note {
+  margin: 0.75rem 0 0;
+  color: var(--hod-text-sub);
+  font-size: 0.72rem;
 }
 
 .student-profile-detail-section {
@@ -1543,6 +1643,24 @@
   .student-profile-modal-content {
     grid-template-columns: 1fr;
     padding: 1rem;
+  }
+
+  .student-profile-tabs {
+    padding: 0 1rem;
+  }
+
+  .student-profile-tabs button {
+    padding: 0.75rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .student-assessment-report-content {
+    padding: 1rem;
+  }
+
+  .student-report-toolbar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .student-profile-modal-header {
