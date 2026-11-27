@@ -51,6 +51,31 @@ const SECTIONS = ["Section A", "Section B", "Section C"];
 
 const ENROLLED_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027];
 
+const CURRENT_SEMESTERS = [
+  "Semester 1",
+  "Semester 2",
+  "Semester 3",
+  "Semester 4",
+  "Semester 5",
+  "Semester 6",
+  "Semester 7",
+  "Semester 8",
+];
+
+const ACADEMIC_YEARS = [
+  "2020-21",
+  "2021-22",
+  "2022-23",
+  "2023-24",
+  "2024-25",
+  "2025-26",
+  "2026-27",
+  "2027-28",
+  "2028-29",
+  "2029-30",
+  "2030-31",
+];
+
 const COUNTRY_CODES = [
   { code: "+91", label: "+91 (India)" },
   { code: "+971", label: "+971 (UAE)" },
@@ -100,6 +125,12 @@ const studentSignupZodSchema = z.object({
       /^4JK\d{2}[A-Z]{2}\d{3}$/,
       "USN must strictly follow format: 4JK + Year (2 digits) + Branch (2 letters) + Roll No. (3 digits) e.g. 4JK26CS001.",
     ),
+  currentSemester: z
+    .string()
+    .min(1, "Notice: Mandatory field. Current semester is required."),
+  academicYear: z
+    .string()
+    .min(1, "Notice: Mandatory field. Academic year is required."),
   fullName: z
     .string()
     .trim()
@@ -312,6 +343,8 @@ export default function StudentSignup({ onBackToLogin }) {
     usn: "",
     branch: UG_BRANCHES[3], // 'B.E. in Computer Science & Engineering'
     section: "Section A",
+    currentSemester: "Semester 1",
+    academicYear: "2026-27",
     enrolledYear: "2026",
 
     // 2. Personal Details
@@ -806,6 +839,44 @@ export default function StudentSignup({ onBackToLogin }) {
                       {SECTIONS.map((sec) => (
                         <option key={sec} value={sec}>
                           {sec}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Current Semester */}
+                  <div className="form-control-group">
+                    <label className="form-label">
+                      Current Semester <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      name="currentSemester"
+                      className="form-select"
+                      value={formData.currentSemester}
+                      onChange={handleInputChange}
+                    >
+                      {CURRENT_SEMESTERS.map((semester) => (
+                        <option key={semester} value={semester}>
+                          {semester}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Academic Year */}
+                  <div className="form-control-group">
+                    <label className="form-label">
+                      Academic Year <span className="text-danger">*</span>
+                    </label>
+                    <select
+                      name="academicYear"
+                      className="form-select"
+                      value={formData.academicYear}
+                      onChange={handleInputChange}
+                    >
+                      {ACADEMIC_YEARS.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
                         </option>
                       ))}
                     </select>
@@ -1871,6 +1942,18 @@ export default function StudentSignup({ onBackToLogin }) {
                   <span className="preview-field-label">Branch Section</span>
                   <strong className="preview-field-val">
                     {formData.section}
+                  </strong>
+                </div>
+                <div className="preview-field-cell">
+                  <span className="preview-field-label">Current Semester</span>
+                  <strong className="preview-field-val">
+                    {formData.currentSemester}
+                  </strong>
+                </div>
+                <div className="preview-field-cell">
+                  <span className="preview-field-label">Academic Year</span>
+                  <strong className="preview-field-val">
+                    {formData.academicYear}
                   </strong>
                 </div>
                 <div className="preview-field-cell">
