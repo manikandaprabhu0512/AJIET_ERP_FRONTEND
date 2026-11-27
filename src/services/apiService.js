@@ -271,12 +271,14 @@ export async function getFacultySubjectRosterApi({
   semester,
   section,
   academicYear,
+  attendanceDate,
 }) {
   const params = new URLSearchParams({
     subject_code: subjectCode,
     semester: String(semester),
     section,
     academic_year: academicYear,
+    attendance_date: attendanceDate,
   });
   const res = await fetch(
     `${API_BASE_URL}/academic/faculty-subject-roster?${params.toString()}`,
@@ -288,11 +290,41 @@ export async function getFacultySubjectRosterApi({
   return data.students || [];
 }
 
-export async function getStudentGradesApi(usn, semester = null) {
+export async function submitFacultyAttendanceApi(token, payload) {
+  const res = await fetch(`${API_BASE_URL}/academic/faculty-attendance`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Failed to save attendance.");
+  return data;
+}
+
+export async function submitFacultyIaMarksApi(token, payload) {
+  const res = await fetch(`${API_BASE_URL}/academic/faculty-ia-marks`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Failed to save IA marks.");
+  return data;
+}
+
+export async function getStudentGradesApi(usn, semester = null, token = "") {
   const url = semester
-    ? `${API_BASE_URL}/academic/student-grades/${usn}?semester=${semester}`
-    : `${API_BASE_URL}/academic/student-grades/${usn}`;
-  const res = await fetch(url);
+    ? `${API_BASE_URL}/academic/student-grades/${encodeURIComponent(usn)}?semester=${semester}`
+    : `${API_BASE_URL}/academic/student-grades/${encodeURIComponent(usn)}`;
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
   const data = await res.json();
   if (!res.ok)
     throw new Error(data.message || "Failed to fetch student academic records");

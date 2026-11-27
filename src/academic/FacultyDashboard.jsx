@@ -7,6 +7,8 @@ import {
   getFacultyAssignedSubjectsApi,
   getFacultyProfileApi,
   getFacultySubjectRosterApi,
+  submitFacultyAttendanceApi,
+  submitFacultyIaMarksApi,
   sendFacultyMessageApi,
   getFacultyMessagesApi,
 } from "../services/apiService";
@@ -262,6 +264,7 @@ export default function FacultyDashboard({
   const [attendanceTime, setAttendanceTime] = useState(CLASS_SCHEDULE[0].time);
   const [attendancePeriod, setAttendancePeriod] = useState(1);
   const [dailyAttendanceStatus, setDailyAttendanceStatus] = useState({});
+  const [isSubmittingAttendance, setIsSubmittingAttendance] = useState(false);
   const [lessonExecution, setLessonExecution] = useState(() =>
     Array.from({ length: CLASS_SCHEDULE.length }, (_, index) => ({
       actualTopic: "",
@@ -278,8 +281,11 @@ export default function FacultyDashboard({
     })),
   );
   const [iaMarksDraft, setIaMarksDraft] = useState({});
+  const [isSubmittingIaMarks, setIsSubmittingIaMarks] = useState(false);
   const [iaExcelFileName, setIaExcelFileName] = useState("");
   const [subjectFormStatus, setSubjectFormStatus] = useState("");
+  const isAssessmentSubmitting =
+    isSubmittingAttendance || isSubmittingIaMarks;
   const [messageRecipientMode, setMessageRecipientMode] = useState("all");
   const [selectedMessageUsns, setSelectedMessageUsns] = useState([]);
   const [messageUsnQuery, setMessageUsnQuery] = useState("");
@@ -1105,11 +1111,11 @@ export default function FacultyDashboard({
           keys.map((key) => normalized[key]).find((value) => value !== undefined);
         const draftKey = `${selectedSubject.id}-${student.studentId}`;
         const current = iaMarksDraft[draftKey] || {
-          ia1: "",
-          ia2: "",
-          task1: "",
-          task2: "",
-          finalIa: "",
+          ia1: student.iaMarks?.ia1 ?? "",
+          ia2: student.iaMarks?.ia2 ?? "",
+          task1: student.iaMarks?.task1 ?? "",
+          task2: student.iaMarks?.task2 ?? "",
+          finalIa: student.iaMarks?.finalIa ?? "",
         };
 
         const imported = { ...current };
@@ -1165,12 +1171,64 @@ export default function FacultyDashboard({
     XLSX.writeFile(workbook, `${selectedSubject.code}_IA_Marks_Template.xlsx`);
   };
 
-  const handleIaMarksSubmit = () => {
-    if (!selectedSubject || subjectRoster.length === 0) return;
+  const handleAttendanceSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedSubject || !authToken || subjectRoster.length === 0) return;
+
+    const students = subjectRoster.map((record) => {
+      const attendanceKey = `${selectedSubject.id}-${attendanceDate}-${record.studentId}`;
+      const statuses =
+        dailyAttendanceStatus[attendanceKey] ||
+        Array.from(
+          { length: CLASS_SCHEDULE.length },
+          (_, index) => record.attendanceByPeriod?.[index] || "P",
+        );
+      return {
+        studentId: record.studentId,
+        status: statuses[attendancePeriod - 1] || "P",
+      };
+    });
+
+    setIsSubmittingAttendance(true);
+    setSubjectFormStatus("");
+    try {
+      await submitFacultyAttendanceApi(authToken, {
+        subjectCode: selectedSubject.code,
+        subjectName: selectedSubject.name,
+        academicYear: selectedSubject.academic_year,
+        semester: selectedSubject.semester,
+        section: selectedSubject.section,
+        attendanceDate,
+        period: attendancePeriod,
+        students,
+      });
+      setSubjectFormStatus("Attendance saved successfully.");
+      try {
+        await refreshSelectedSubjectRoster();
+      } catch (refreshError) {
+        setSubjectFormStatus(
+          `Attendance saved, but the roster could not refresh: ${refreshError.message}`,
+        );
+      }
+    } catch (error) {
+      setSubjectFormStatus(error.message || "Failed to save attendance.");
+    } finally {
+      setIsSubmittingAttendance(false);
+    }
+  };
+
+  const handleIaMarksSubmit = async () => {
+    if (!selectedSubject || !authToken || subjectRoster.length === 0) return;
 
     const marks = subjectRoster.map((record) => {
       const draftKey = `${selectedSubject.id}-${record.studentId}`;
-      const draft = iaMarksDraft[draftKey] || {};
+      const draft = iaMarksDraft[draftKey] || {
+        ia1: record.iaMarks?.ia1 ?? "",
+        ia2: record.iaMarks?.ia2 ?? "",
+        task1: record.iaMarks?.task1 ?? "",
+        task2: record.iaMarks?.task2 ?? "",
+        finalIa: record.iaMarks?.finalIa ?? "",
+      };
       return {
         studentId: record.studentId,
         studentName: record.studentName,
@@ -1182,36 +1240,32 @@ export default function FacultyDashboard({
       };
     });
 
-    const submission = {
-      id: `IA-${Date.now()}`,
-      academicYear: subjectAcademicYear,
-      semester: selectedSubject.semester,
-      section: selectedSubject.section,
-      subjectCode: selectedSubject.code,
-      subjectName: selectedSubject.name,
-      facultyId: profileData.facultyId || "FACULTY",
-      facultyName: facultyDisplayName || "Faculty",
-      department: profileData.department || "Department",
-      status: "Pending",
-      submittedAt: new Date().toISOString(),
-      source: iaExcelFileName ? "Excel Upload" : "Manual Entry",
-      marks,
-    };
+    setIsSubmittingIaMarks(true);
+    setSubjectFormStatus("");
+    try {
+      await submitFacultyIaMarksApi(authToken, {
+        subjectCode: selectedSubject.code,
+        subjectName: selectedSubject.name,
+        academicYear: selectedSubject.academic_year,
+        semester: selectedSubject.semester,
+        section: selectedSubject.section,
+        source: iaExcelFileName ? "Excel Upload" : "Manual Entry",
+        marks,
+      });
 
-    const existing = (() => {
+      setSubjectFormStatus("IA marks saved successfully.");
       try {
-        return JSON.parse(localStorage.getItem("ajiet_ia_submissions") || "[]");
-      } catch {
-        return [];
+        await refreshSelectedSubjectRoster();
+      } catch (refreshError) {
+        setSubjectFormStatus(
+          `IA marks saved, but the roster could not refresh: ${refreshError.message}`,
+        );
       }
-    })();
-    localStorage.setItem(
-      "ajiet_ia_submissions",
-      JSON.stringify([submission, ...existing]),
-    );
-    setSubjectFormStatus(
-      "IA marks submitted successfully for HOD review.",
-    );
+    } catch (error) {
+      setSubjectFormStatus(error.message || "Failed to save IA marks.");
+    } finally {
+      setIsSubmittingIaMarks(false);
+    }
   };
 
   const handleViewEventReport = () => {
@@ -1397,6 +1451,19 @@ export default function FacultyDashboard({
     selectedSubject?.hoursPerWeek ??
     selectedSubject?.total_hours ??
     selectedSubject?.totalHours;
+  const refreshSelectedSubjectRoster = async () => {
+    if (!selectedSubject || !authToken) return [];
+    const students = await getFacultySubjectRosterApi({
+      token: authToken,
+      subjectCode: selectedSubject.code,
+      semester: selectedSubject.semester,
+      section: selectedSubject.section,
+      academicYear: selectedSubject.academic_year,
+      attendanceDate,
+    });
+    setSubjectRoster(students);
+    return students;
+  };
 
   useEffect(() => {
     if (!selectedSubjectCode || !profileData.facultyId || !authToken) {
@@ -1416,6 +1483,7 @@ export default function FacultyDashboard({
       semester: selectedSubjectSemester,
       section: selectedSubjectSection,
       academicYear: selectedSubjectAcademicYear,
+      attendanceDate,
     })
       .then((students) => {
         if (isCurrent) setSubjectRoster(students);
@@ -1440,6 +1508,7 @@ export default function FacultyDashboard({
     selectedSubjectSemester,
     selectedSubjectSection,
     selectedSubjectAcademicYear,
+    attendanceDate,
     profileData.facultyId,
     authToken,
   ]);
@@ -4417,7 +4486,12 @@ export default function FacultyDashboard({
                       id="subject-academic-year"
                       className="pub-form-input pub-form-select"
                       value={subjectAcademicYear}
-                      disabled={loading || Boolean(assignedSubjectsError) || availableSubjectYears.length === 0}
+                      disabled={
+                        loading ||
+                        isAssessmentSubmitting ||
+                        Boolean(assignedSubjectsError) ||
+                        availableSubjectYears.length === 0
+                      }
                       onChange={(event) => {
                         const academicYear = event.target.value;
                         setSubjectAcademicYear(academicYear);
@@ -4450,6 +4524,7 @@ export default function FacultyDashboard({
                       value={subjectSemester}
                       disabled={
                         loading ||
+                        isAssessmentSubmitting ||
                         Boolean(assignedSubjectsError) ||
                         !subjectAcademicYear
                       }
@@ -4483,6 +4558,7 @@ export default function FacultyDashboard({
                       value={selectedSubjectId}
                       disabled={
                         loading ||
+                        isAssessmentSubmitting ||
                         Boolean(assignedSubjectsError) ||
                         !subjectSemester
                       }
@@ -4551,6 +4627,7 @@ export default function FacultyDashboard({
                     >
                       <button
                         type="button"
+                        disabled={isAssessmentSubmitting}
                         role="tab"
                         aria-selected={subjectAssessmentTab === "attendance"}
                         className={
@@ -4562,6 +4639,7 @@ export default function FacultyDashboard({
                       </button>
                       <button
                         type="button"
+                        disabled={isAssessmentSubmitting}
                         role="tab"
                         aria-selected={subjectAssessmentTab === "ia"}
                         className={
@@ -4575,12 +4653,7 @@ export default function FacultyDashboard({
                     {subjectAssessmentTab === "attendance" ? (
                       <form
                         className="daily-entry-form"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          setSubjectFormStatus(
-                            "Attendance and daily delivery report submitted for review.",
-                          );
-                        }}
+                        onSubmit={handleAttendanceSubmit}
                       >
                         <section className="subject-entry-section">
                           <div className="subject-entry-heading">
@@ -4595,6 +4668,7 @@ export default function FacultyDashboard({
                               <input
                                 type="date"
                                 value={attendanceDate}
+                                disabled={isAssessmentSubmitting}
                                 onChange={(event) =>
                                   setAttendanceDate(event.target.value)
                                 }
@@ -4604,6 +4678,7 @@ export default function FacultyDashboard({
                               Time
                               <select
                                 value={attendanceTime}
+                                disabled={isAssessmentSubmitting}
                                 onChange={(event) => {
                                   const period = CLASS_SCHEDULE.find(
                                     (item) => item.time === event.target.value,
@@ -4626,6 +4701,7 @@ export default function FacultyDashboard({
                               Period
                               <select
                                 value={attendancePeriod}
+                                disabled={isAssessmentSubmitting}
                                 onChange={(event) => {
                                   const period = Number(event.target.value);
                                   setAttendancePeriod(period);
@@ -4684,10 +4760,12 @@ export default function FacultyDashboard({
                                   const attendanceKey = `${selectedSubject.id}-${attendanceDate}-${record.studentId}`;
                                   const statuses =
                                     dailyAttendanceStatus[attendanceKey] ||
-                                    ["P", "P", "P", "P", "P", "P"];
-                                  const presentCount = statuses.filter(
-                                    (status) => status === "P",
-                                  ).length;
+                                    Array.from(
+                                      { length: CLASS_SCHEDULE.length },
+                                      (_, periodIndex) =>
+                                        record.attendanceByPeriod?.[periodIndex] ||
+                                        "P",
+                                    );
                                   const selectedStatus =
                                     statuses[attendancePeriod - 1] || "P";
                                   return (
@@ -4698,24 +4776,29 @@ export default function FacultyDashboard({
                                       <td>
                                         <button
                                           type="button"
+                                          disabled={
+                                            isAssessmentSubmitting ||
+                                            subjectRosterLoading
+                                          }
                                           className={`attendance-mark-button ${
                                             selectedStatus === "P"
                                               ? "present"
                                               : "absent"
                                           }`}
                                           title="Click to toggle Present / Absent"
-                                          onClick={() =>
+                                          onClick={() => {
+                                            const initialStatuses = Array.from(
+                                              { length: CLASS_SCHEDULE.length },
+                                              (_, periodIndex) =>
+                                                record.attendanceByPeriod?.[
+                                                  periodIndex
+                                                ] || "P",
+                                            );
                                             setDailyAttendanceStatus((current) => ({
                                               ...current,
-                                                [attendanceKey]: (
-                                                  current[attendanceKey] || [
-                                                  "P",
-                                                  "P",
-                                                  "P",
-                                                  "P",
-                                                  "P",
-                                                  "P",
-                                                ]
+                                              [attendanceKey]: (
+                                                current[attendanceKey] ||
+                                                initialStatuses
                                               ).map((value, periodIndex) =>
                                                 periodIndex === attendancePeriod - 1
                                                   ? value === "P"
@@ -4723,15 +4806,17 @@ export default function FacultyDashboard({
                                                     : "P"
                                                   : value,
                                               ),
-                                            }))
-                                          }
+                                            }));
+                                          }}
                                         >
                                           {selectedStatus}
                                         </button>
                                       </td>
                                       <td>
                                         <strong className="attendance-percent">
-                                          {((presentCount / CLASS_SCHEDULE.length) * 100).toFixed(1)}%
+                                          {record.attendancePercent == null
+                                            ? "—"
+                                            : `${Number(record.attendancePercent).toFixed(1)}%`}
                                         </strong>
                                       </td>
                                     </tr>
@@ -4835,9 +4920,20 @@ export default function FacultyDashboard({
                           </div>
                         )}
                         <div className="subject-form-actions">
-                          <button type="submit" className="subject-submit-button">
+                          <button
+                            type="submit"
+                            className="subject-submit-button"
+                            disabled={
+                              isSubmittingAttendance ||
+                              subjectRosterLoading ||
+                              subjectRoster.length === 0 ||
+                              Boolean(subjectRosterError)
+                            }
+                          >
                             <Check size={17} />
-                            Submit Attendance & Delivery Report
+                            {isSubmittingAttendance
+                              ? "Saving Attendance..."
+                              : "Submit Attendance"}
                           </button>
                         </div>
                       </form>
@@ -4870,7 +4966,11 @@ export default function FacultyDashboard({
                                 type="button"
                                 className="btn-secondary-action"
                                 onClick={handleDownloadIaTemplate}
-                                disabled={subjectRosterLoading || subjectRoster.length === 0}
+                                disabled={
+                                  isAssessmentSubmitting ||
+                                  subjectRosterLoading ||
+                                  subjectRoster.length === 0
+                                }
                               >
                                 <Download size={14} />
                                 <span>Download Template</span>
@@ -4886,7 +4986,11 @@ export default function FacultyDashboard({
                                 id="ia-marks-excel"
                                 type="file"
                                 accept=".xlsx,.xls,.csv"
-                                disabled={subjectRosterLoading || subjectRoster.length === 0}
+                                disabled={
+                                  isAssessmentSubmitting ||
+                                  subjectRosterLoading ||
+                                  subjectRoster.length === 0
+                                }
                                 onChange={handleIaExcelUpload}
                               />
                             </div>
@@ -4928,11 +5032,11 @@ export default function FacultyDashboard({
                                 ) : subjectRoster.map((record, index) => {
                                   const draftKey = `${selectedSubject.id}-${record.studentId}`;
                                   const draft = iaMarksDraft[draftKey] || {
-                                    ia1: "",
-                                    ia2: "",
-                                    task1: "",
-                                    task2: "",
-                                    finalIa: "",
+                                    ia1: record.iaMarks?.ia1 ?? "",
+                                    ia2: record.iaMarks?.ia2 ?? "",
+                                    task1: record.iaMarks?.task1 ?? "",
+                                    task2: record.iaMarks?.task2 ?? "",
+                                    finalIa: record.iaMarks?.finalIa ?? "",
                                   };
                                   const updateIa = (field, value, maximum) => {
                                     const numericValue = value === "" ? "" : Math.max(0, Math.min(Number(value), maximum));
@@ -4962,6 +5066,7 @@ export default function FacultyDashboard({
                                             type="number"
                                             min="0"
                                             max={maximum}
+                                            disabled={isSubmittingIaMarks}
                                             aria-label={`${label} marks for ${record.studentName}`}
                                             value={draft[field]}
                                             onChange={(event) =>
@@ -4987,10 +5092,17 @@ export default function FacultyDashboard({
                           <button
                             type="submit"
                             className="subject-submit-button"
-                            disabled={subjectRosterLoading || subjectRoster.length === 0 || Boolean(subjectRosterError)}
+                            disabled={
+                              isSubmittingIaMarks ||
+                              subjectRosterLoading ||
+                              subjectRoster.length === 0 ||
+                              Boolean(subjectRosterError)
+                            }
                           >
                             <Check size={17} />
-                            Submit IA Marks
+                            {isSubmittingIaMarks
+                              ? "Saving IA Marks..."
+                              : "Submit IA Marks"}
                           </button>
                         </div>
                       </form>

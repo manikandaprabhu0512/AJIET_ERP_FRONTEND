@@ -2100,6 +2100,22 @@
   margin-bottom: 20px;
 }
 
+.faculty-assessments-wrap {
+  margin-top: 16px;
+}
+
+.vtu-grade-table.faculty-assessment-table {
+  min-width: 1180px;
+}
+
+.faculty-assessment-note {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
 /* Title bar */
 .grade-ledger-title-bar {
   display: flex;
