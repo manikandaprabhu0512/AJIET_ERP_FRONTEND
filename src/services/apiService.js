@@ -131,6 +131,25 @@ export async function getFacultiesApi(dept = "EC") {
   return data.faculties || [];
 }
 
+export async function getHodStudentsApi(token, filters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) {
+      params.set(key, String(value));
+    }
+  });
+
+  const res = await fetch(
+    `${API_BASE_URL}/academic/hod/students?${params.toString()}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Failed to fetch department students");
+  return data;
+}
+
 export async function getSubjectsApi(dept = "EC", semester = null) {
   const url = semester
     ? `${API_BASE_URL}/academic/subjects?dept=${dept}&semester=${semester}`
@@ -236,10 +255,10 @@ export async function createSubjectAllotmentApi(payload) {
   return data;
 }
 
-export async function getFacultyAssignedSubjectsApi(facultyId) {
-  const res = await fetch(
-    `${API_BASE_URL}/academic/faculty-subjects/${facultyId}`,
-  );
+export async function getFacultyAssignedSubjectsApi(token) {
+  const res = await fetch(`${API_BASE_URL}/academic/faculty-subjects`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
   const data = await res.json();
   if (!res.ok)
     throw new Error(data.message || "Failed to fetch assigned subjects");
@@ -247,14 +266,13 @@ export async function getFacultyAssignedSubjectsApi(facultyId) {
 }
 
 export async function getFacultySubjectRosterApi({
-  facultyId,
+  token,
   subjectCode,
   semester,
   section,
   academicYear,
 }) {
   const params = new URLSearchParams({
-    faculty_id: facultyId,
     subject_code: subjectCode,
     semester: String(semester),
     section,
@@ -262,6 +280,7 @@ export async function getFacultySubjectRosterApi({
   });
   const res = await fetch(
     `${API_BASE_URL}/academic/faculty-subject-roster?${params.toString()}`,
+    { headers: { Authorization: `Bearer ${token}` } },
   );
   const data = await res.json();
   if (!res.ok)
