@@ -1283,6 +1283,23 @@
   gap: 0.75rem;
 }
 
+.message-cohort-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.message-student-status {
+  margin: 0 0 0.9rem;
+  color: var(--faculty-text-sub);
+  font-size: 0.76rem;
+}
+
+.message-student-status.error {
+  color: #b91c1c;
+}
+
 .message-recipient-mode {
   display: flex;
   align-items: flex-start;
@@ -1325,6 +1342,13 @@
   border: 1px solid var(--faculty-border);
   border-radius: 8px;
   background: #f8fafc;
+}
+
+.message-recipient-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
 }
 
 .message-selected-usns {
@@ -1409,12 +1433,6 @@
   padding: 0.65rem 0.7rem;
   color: var(--faculty-text-sub);
   font-size: 0.78rem;
-}
-
-.message-sample-note {
-  margin: 0.75rem 0 0;
-  color: var(--faculty-text-sub);
-  font-size: 0.74rem;
 }
 
 .message-composer-fields {
@@ -1558,6 +1576,10 @@
   }
 
   .message-recipient-modes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .message-cohort-filters {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -2155,53 +2177,181 @@
   color: #ffffff !important;
 }
 
-/* Report Generation Cards */
-.report-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 1rem;
-}
-
-.report-export-card {
-  background: #ffffff;
+/* Consolidated Faculty Achievement Report */
+.crp-report-controls {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
   border: 1px solid var(--faculty-border);
   border-radius: 8px;
+}
+
+.crp-report-year-field {
+  width: min(280px, 100%);
+}
+
+.crp-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.crp-report-sheet {
   padding: 1.25rem;
+  background: #ffffff;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 8px;
+}
+
+.crp-report-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--faculty-navy);
+}
+
+.crp-report-kicker {
+  color: var(--faculty-accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.crp-report-heading h3 {
+  margin: 0.25rem 0;
+  color: var(--faculty-navy);
+  font-size: 1.25rem;
+}
+
+.crp-report-heading p {
+  margin: 0;
+  color: var(--faculty-text-muted);
+  font-size: 0.8rem;
+}
+
+.crp-report-faculty {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.report-export-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-}
-
-.report-card-top h4 {
-  margin: 0 0 6px 0;
-  font-size: 0.95rem;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.report-card-top p {
-  margin: 0;
+  gap: 0.2rem;
+  text-align: right;
   font-size: 0.8rem;
-  color: #64748b;
-  line-height: 1.45;
 }
 
-.report-card-actions {
+.crp-report-faculty strong {
+  color: var(--faculty-navy);
+  font-size: 0.9rem;
+}
+
+.crp-report-faculty span {
+  color: var(--faculty-text-muted);
+}
+
+.crp-report-total {
   display: flex;
-  gap: 8px;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #f1f5f9;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  color: var(--faculty-navy);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  font-weight: 700;
+}
+
+.crp-report-total strong {
+  font-size: 1.25rem;
+}
+
+.crp-report-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.75rem;
+}
+
+.crp-report-summary-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.85rem;
+  background: #ffffff;
+  border: 1px solid var(--faculty-border);
+  border-radius: 7px;
+}
+
+.crp-report-summary-card span {
+  color: var(--faculty-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.crp-report-summary-card strong {
+  color: var(--faculty-navy);
+  font-size: 1.35rem;
+}
+
+.crp-report-summary-card small {
+  color: var(--faculty-text-sub);
+  font-size: 0.7rem;
+}
+
+.crp-report-table-section {
+  margin-top: 1.5rem;
+}
+
+.crp-report-table-section h4 {
+  margin: 0 0 0.65rem;
+  color: var(--faculty-navy);
+  font-size: 0.95rem;
+}
+
+.crp-report-table {
+  min-width: 760px;
+}
+
+@media (max-width: 700px) {
+  .crp-report-controls,
+  .crp-report-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .crp-report-year-field {
+    width: 100%;
+  }
+
+  .crp-report-faculty {
+    text-align: left;
+  }
+
+  .crp-report-sheet {
+    padding: 0.85rem;
+  }
+}
+
+@media print {
+  .crp-report-controls {
+    display: none !important;
+  }
+
+  .crp-report-sheet {
+    padding: 0;
+    border: 0;
+  }
+
+  .crp-report-table-wrap {
+    overflow: visible;
+  }
+
+  .crp-report-table {
+    min-width: 0 !important;
+  }
 }
 
 /* 1. Profile Achievements Styles */
@@ -3048,6 +3198,57 @@
   gap: 14px;
 }
 
+.research-form-card {
+  margin: 0 0 1.25rem;
+}
+
+.research-form-grid .research-title-field {
+  grid-column: span 3;
+}
+
+.research-title-field textarea {
+  resize: vertical;
+}
+
+.research-completion-options {
+  grid-column: span 2;
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  border: 1px solid var(--faculty-border-dark);
+  border-radius: 6px;
+}
+
+.research-completion-options legend {
+  padding: 0 0.35rem;
+}
+
+.research-completion-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--faculty-text-main);
+  font-size: 0.8rem;
+}
+
+.research-completion-option input {
+  accent-color: var(--faculty-accent);
+}
+
+.research-date-field {
+  align-self: start;
+}
+
+.research-records-heading {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  color: var(--faculty-navy);
+  font-weight: 800;
+}
+
 .event-form-section {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -3151,12 +3352,20 @@
 
 @media (max-width: 640px) {
   .event-form-grid,
-  .event-participants-grid {
+  .event-participants-grid,
+  .research-form-grid,
+  .training-form-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .event-form-span-2 {
+  .event-form-span-2,
+  .research-form-grid .research-title-field,
+  .research-completion-options {
     grid-column: auto;
+  }
+
+  .research-completion-options {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

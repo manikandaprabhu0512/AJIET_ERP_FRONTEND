@@ -44,6 +44,8 @@ const EMPTY_STUDENT_PROFILE = {
   usn: "",
   branch: "",
   section: "",
+  currentSemester: "",
+  academicYear: "",
   enrolledYear: "",
   fullName: "",
   dob: "",
@@ -166,6 +168,14 @@ function StudentProfileDocument({
             value={studentData.branch}
           />
           <StudentProfileField label="Section" value={studentData.section} />
+          <StudentProfileField
+            label="Current Semester"
+            value={studentData.currentSemester}
+          />
+          <StudentProfileField
+            label="Academic Year"
+            value={studentData.academicYear}
+          />
           <StudentProfileField
             label="Enrolled Year"
             value={studentData.enrolledYear}
@@ -457,6 +467,8 @@ export default function StudentDashboard({
       email: currentUser?.email || "",
       branch: currentUser?.branch || "",
       section: currentUser?.section || "",
+      currentSemester: currentUser?.currentSemester || "",
+      academicYear: currentUser?.academicYear || "",
     };
   });
 
@@ -480,6 +492,14 @@ export default function StudentDashboard({
           usn: dbProfile.usn || prev.usn,
           branch: dbProfile.branch || prev.branch,
           section: dbProfile.section || prev.section,
+          currentSemester:
+            dbProfile.current_semester ||
+            dbProfile.currentSemester ||
+            prev.currentSemester,
+          academicYear:
+            dbProfile.academic_year ||
+            dbProfile.academicYear ||
+            prev.academicYear,
           enrolledYear: dbProfile.enrolled_year || prev.enrolledYear,
           fullName: dbProfile.full_name || prev.fullName,
           dob: dbProfile.dob ? String(dbProfile.dob).split("T")[0] : prev.dob,
@@ -786,6 +806,12 @@ export default function StudentDashboard({
                   </span>
                   <span className="sidebar-student-badge">
                     {studentData.section} • {studentData.enrolledYear} Batch
+                  </span>
+                  <span className="sidebar-student-badge">
+                    Current Semester: {studentData.currentSemester || "Not Provided"}
+                  </span>
+                  <span className="sidebar-student-badge">
+                    Academic Year: {studentData.academicYear || "Not Provided"}
                   </span>
                 </div>
               </div>

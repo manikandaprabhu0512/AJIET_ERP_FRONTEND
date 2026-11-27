@@ -7,6 +7,7 @@ import {
   getFacultyAssignedSubjectsApi,
   getFacultyProfileApi,
   getFacultySubjectRosterApi,
+  getFacultyMessageStudentsApi,
   sendFacultyMessageApi,
   getFacultyMessagesApi,
 } from "../services/apiService";
@@ -85,6 +86,48 @@ const PROFILE_FIELD_LABELS = {
 };
 
 const ACADEMIC_YEAR_OPTIONS = ["2026-27", "2025-26", "2024-25", "2023-24"];
+const RESEARCH_COMPLETION_OPTIONS = [
+  "Course File Completion",
+  "Progress 1 Completion",
+  "Progress 2 Completion",
+  "Colloquium",
+  "Pre-Synopsis",
+  "Thesis Submission",
+];
+const INITIAL_RESEARCH_FORM_STATE = {
+  academicYear: ACADEMIC_YEAR_OPTIONS[0],
+  candidateName: "",
+  candidateUsn: "",
+  researchTitle: "",
+  completionStatus: [],
+  date: "",
+};
+const INITIAL_AWARD_FORM_STATE = {
+  academicYear: ACADEMIC_YEAR_OPTIONS[0],
+  awardName: "",
+  awardAgency: "",
+  date: "",
+  documentName: "",
+};
+const INITIAL_TRAINING_FORM_STATE = {
+  academicYear: ACADEMIC_YEAR_OPTIONS[0],
+  type: "Workshop",
+  title: "",
+  fromDate: "",
+  toDate: "",
+  conductedBy: "",
+};
+
+const calculateTrainingDays = (fromDate, toDate) => {
+  if (!fromDate || !toDate) return "";
+  const start = Date.parse(`${fromDate}T00:00:00Z`);
+  const end = Date.parse(`${toDate}T00:00:00Z`);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    return "";
+  }
+  return Math.floor((end - start) / 86400000) + 1;
+};
+
 const CLASS_SCHEDULE = [
   { classNo: 1, time: "9:00 - 9:55" },
   { classNo: 2, time: "9:55 - 10:50" },
@@ -104,17 +147,6 @@ const EVENT_TYPE_OPTIONS = [
   "NSS",
   "Club Activity",
   "Others",
-];
-
-const SAMPLE_STUDENT_USNS = [
-  "4JK26CS001",
-  "4JK26CS002",
-  "4JK26CS003",
-  "4JK26CS004",
-  "4JK26CS005",
-  "4JK26CS006",
-  "4JK26CS007",
-  "4JK26CS008",
 ];
 
 const PROFILE_FIELD_GROUPS = [
@@ -282,6 +314,14 @@ export default function FacultyDashboard({
   const [subjectFormStatus, setSubjectFormStatus] = useState("");
   const [messageRecipientMode, setMessageRecipientMode] = useState("all");
   const [selectedMessageUsns, setSelectedMessageUsns] = useState([]);
+  const [messageAcademicYear, setMessageAcademicYear] = useState("");
+  const [messageSemester, setMessageSemester] = useState("");
+  const [messageSection, setMessageSection] = useState("");
+  const [messageStudentResult, setMessageStudentResult] = useState({
+    key: "",
+    students: [],
+    error: "",
+  });
   const [messageUsnQuery, setMessageUsnQuery] = useState("");
   const [isMessageUsnDropdownOpen, setIsMessageUsnDropdownOpen] =
     useState(false);
@@ -297,8 +337,22 @@ export default function FacultyDashboard({
   const isTimetableSubmitted = Boolean(timetableSubmissions[timetableKey]);
 
   // Achievements sub-tab selection:
-  // 'publication' | 'patent' | 'funding' | 'research' | 'awards' | 'workshops' | 'fdp' | 'reports'
+  // 'publication' | 'patent' | 'funding' | 'research' | 'awards' | 'training' | 'reports'
   const [achievementsSubTab, setAchievementsSubTab] = useState("publication");
+  const [showResearchForm, setShowResearchForm] = useState(false);
+  const [researchFormData, setResearchFormData] = useState(
+    INITIAL_RESEARCH_FORM_STATE,
+  );
+  const [researchRecords, setResearchRecords] = useState([]);
+  const [showAwardForm, setShowAwardForm] = useState(false);
+  const [awardFormData, setAwardFormData] = useState(INITIAL_AWARD_FORM_STATE);
+  const [awardsList, setAwardsList] = useState([]);
+  const [crpReportYear, setCrpReportYear] = useState("All");
+  const [showTrainingForm, setShowTrainingForm] = useState(false);
+  const [trainingFormData, setTrainingFormData] = useState(
+    INITIAL_TRAINING_FORM_STATE,
+  );
+  const [trainingRecords, setTrainingRecords] = useState([]);
 
   // Publications state with comprehensive dataset matching all required fields
   const [publicationsList, setPublicationsList] = useState([
@@ -717,6 +771,25 @@ export default function FacultyDashboard({
   };
   const facultyDisplayName =
     `${profileData.title} ${profileData.fullName}`.trim();
+  const messageCohortKey =
+    messageAcademicYear && messageSemester && messageSection
+      ? JSON.stringify([
+          profileData.facultyId,
+          messageAcademicYear,
+          messageSemester,
+          messageSection,
+        ])
+      : "";
+  const currentMessageStudentResult =
+    messageStudentResult.key === messageCohortKey
+      ? messageStudentResult
+      : null;
+  const messageStudents = currentMessageStudentResult?.students || [];
+  const messageStudentsError = currentMessageStudentResult?.error || "";
+  const messageStudentsLoading =
+    activeTab === "message" &&
+    Boolean(messageCohortKey) &&
+    !currentMessageStudentResult;
 
   // Event Organization State
   const [eventAcademicYearFilter, setEventAcademicYearFilter] = useState("All");
@@ -873,6 +946,47 @@ export default function FacultyDashboard({
       .catch(() => setSentMessages([]));
   }, [profileData.facultyId]);
 
+  useEffect(() => {
+    if (activeTab !== "message" || !messageCohortKey) return undefined;
+
+    let isCurrent = true;
+    getFacultyMessageStudentsApi({
+      facultyId: profileData.facultyId,
+      academicYear: messageAcademicYear,
+      semester: messageSemester,
+      section: messageSection,
+    })
+      .then((students) => {
+        if (isCurrent) {
+          setMessageStudentResult({
+            key: messageCohortKey,
+            students,
+            error: "",
+          });
+        }
+      })
+      .catch((error) => {
+        if (isCurrent) {
+          setMessageStudentResult({
+            key: messageCohortKey,
+            students: [],
+            error: error.message || "Failed to fetch matching students.",
+          });
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    activeTab,
+    profileData.facultyId,
+    messageCohortKey,
+    messageAcademicYear,
+    messageSemester,
+    messageSection,
+  ]);
+
   // Fetch assignments only after the signed-in faculty profile is resolved.
   useEffect(() => {
     let isCurrent = true;
@@ -921,11 +1035,112 @@ export default function FacultyDashboard({
     setTimeout(() => setNotification(""), 3500);
   };
 
+  const handleResearchFormChange = (event) => {
+    const { name, value } = event.target;
+    setResearchFormData((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleResearchCompletionChange = (event) => {
+    const { checked, value } = event.target;
+    setResearchFormData((previous) => ({
+      ...previous,
+      completionStatus: checked
+        ? [...previous.completionStatus, value]
+        : previous.completionStatus.filter((status) => status !== value),
+    }));
+  };
+
+  const handleResearchFormSubmit = (event) => {
+    event.preventDefault();
+    const newRecord = {
+      id: `RESEARCH-${Date.now()}`,
+      ...researchFormData,
+    };
+    setResearchRecords((previous) => [newRecord, ...previous]);
+    showToast("Research candidate record added successfully.");
+    setResearchFormData({
+      ...INITIAL_RESEARCH_FORM_STATE,
+      academicYear: researchFormData.academicYear,
+    });
+    setShowResearchForm(false);
+  };
+
+  const handleAwardFormChange = (event) => {
+    const { name, value } = event.target;
+    setAwardFormData((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleAwardUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setAwardFormData((previous) => ({
+        ...previous,
+        documentName: file.name,
+      }));
+    }
+  };
+
+  const handleAwardFormSubmit = (event) => {
+    event.preventDefault();
+    const newRecord = {
+      id: `AWARD-${Date.now()}`,
+      ...awardFormData,
+    };
+    setAwardsList((previous) => [newRecord, ...previous]);
+    showToast("Award record added successfully.");
+    setAwardFormData({
+      ...INITIAL_AWARD_FORM_STATE,
+      academicYear: awardFormData.academicYear,
+    });
+    setShowAwardForm(false);
+  };
+
+  const handleTrainingFormChange = (event) => {
+    const { name, value } = event.target;
+    setTrainingFormData((previous) => ({ ...previous, [name]: value }));
+  };
+
+  const handleTrainingFormSubmit = (event) => {
+    event.preventDefault();
+    if (trainingFormData.toDate < trainingFormData.fromDate) {
+      showToast("To date must be on or after the from date.");
+      return;
+    }
+
+    const newRecord = {
+      id: `TRAINING-${Date.now()}`,
+      ...trainingFormData,
+      totalDays: calculateTrainingDays(
+        trainingFormData.fromDate,
+        trainingFormData.toDate,
+      ),
+    };
+    setTrainingRecords((previous) => [newRecord, ...previous]);
+    showToast(`${newRecord.type} record added successfully.`);
+    setTrainingFormData({
+      ...INITIAL_TRAINING_FORM_STATE,
+      academicYear: trainingFormData.academicYear,
+    });
+    setShowTrainingForm(false);
+  };
+
   const handleSendMessage = async (event) => {
     event.preventDefault();
     const body = messageBody.trim();
     if (!body) {
       showToast("Enter a message before sending.");
+      return;
+    }
+    if (!messageAcademicYear || !messageSemester || !messageSection) {
+      showToast("Select an academic year, semester, and section.");
+      return;
+    }
+    if (messageStudentsLoading) {
+      showToast("Wait for the matching student list to finish loading.");
+      return;
+    }
+    if (messageStudents.length === 0) {
+      showToast("No students match the selected academic filters.");
       return;
     }
     if (
@@ -943,9 +1158,11 @@ export default function FacultyDashboard({
         department: profileData.department,
         subject: messageSubject.trim(),
         body,
+        academicYear: messageAcademicYear,
+        semester: messageSemester,
+        section: messageSection,
         recipientMode: messageRecipientMode,
-        recipients:
-          messageRecipientMode === "all" ? [] : [...selectedMessageUsns],
+        recipients: [...selectedMessageUsns],
       });
       const messages = await getFacultyMessagesApi(profileData.facultyId);
       setSentMessages(
@@ -1357,6 +1574,32 @@ export default function FacultyDashboard({
         .filter(Boolean),
     ),
   ].sort((a, b) => b.localeCompare(a));
+  const availableMessageYears = [
+    ...new Set(
+      assignedSubjects
+        .map((subject) => subject.academic_year)
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => b.localeCompare(a));
+  const availableMessageSemesters = [
+    ...new Set(
+      assignedSubjects
+        .filter((subject) => subject.academic_year === messageAcademicYear)
+        .map((subject) => String(subject.semester)),
+    ),
+  ].sort((a, b) => Number(a) - Number(b));
+  const availableMessageSections = [
+    ...new Set(
+      assignedSubjects
+        .filter(
+          (subject) =>
+            subject.academic_year === messageAcademicYear &&
+            String(subject.semester) === messageSemester,
+        )
+        .map((subject) => subject.section)
+        .filter(Boolean),
+    ),
+  ].sort((a, b) => a.localeCompare(b));
   const availableSubjectSemesters = [
     ...new Set(
       assignedSubjects
@@ -1457,11 +1700,165 @@ export default function FacultyDashboard({
     return matchesYear;
   });
 
-  const filteredMessageUsns = SAMPLE_STUDENT_USNS.filter(
-    (usn) =>
-      usn.toLowerCase().includes(messageUsnQuery.trim().toLowerCase()) &&
-      !selectedMessageUsns.includes(usn),
-  );
+  const achievementReportRecords = [
+    ...publicationsList.map((publication) => ({
+      id: `publication-${publication.id}`,
+      academicYear: publication.academicYear,
+      category: "Publication",
+      title: publication.titleOfPaper,
+      details: [
+        publication.author,
+        publication.publicationType,
+        publication.journalConferenceName,
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      date: publication.publishedDate || "",
+    })),
+    ...patentsList.map((patent) => ({
+      id: `patent-${patent.id}`,
+      academicYear: patent.academicYear,
+      category: "Patent",
+      title: patent.title,
+      details: [
+        patent.applicantName,
+        patent.patentType,
+        patent.status,
+        patent.applicationNumber,
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      date: patent.filedDate || "",
+    })),
+    ...fundingList.map((funding) => ({
+      id: `funding-${funding.id}`,
+      academicYear: funding.academicYear,
+      category: "Funding",
+      title: funding.projectTitle,
+      details: [
+        funding.pi,
+        funding.agency,
+        funding.status,
+        funding.fundAmount
+          ? `₹ ${Number(funding.fundAmount).toLocaleString("en-IN")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      date: funding.submissionDate || "",
+    })),
+    ...researchRecords.map((research) => ({
+      id: `research-${research.id}`,
+      academicYear: research.academicYear,
+      category: "Research",
+      title: research.researchTitle,
+      details: [
+        research.candidateName,
+        research.candidateUsn,
+        ...(research.completionStatus || []),
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      date: research.date || "",
+    })),
+    ...awardsList.map((award) => ({
+      id: `award-${award.id}`,
+      academicYear: award.academicYear,
+      category: "Award",
+      title: award.awardName,
+      details: [award.awardAgency, award.documentName]
+        .filter(Boolean)
+        .join(" • "),
+      date: award.date || "",
+    })),
+    ...trainingRecords.map((training) => ({
+      id: `training-${training.id}`,
+      academicYear: training.academicYear,
+      category: training.type,
+      title: training.title,
+      details: [
+        training.conductedBy,
+        training.fromDate && training.toDate
+          ? `${training.fromDate} to ${training.toDate}`
+          : "",
+        training.totalDays ? `${training.totalDays} days` : "",
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      date: training.fromDate || "",
+    })),
+  ];
+  const reportAcademicYears = [
+    ...new Set([
+      ...ACADEMIC_YEAR_OPTIONS,
+      ...achievementReportRecords.map((record) => record.academicYear),
+    ]),
+  ]
+    .filter(Boolean)
+    .sort((a, b) => b.localeCompare(a));
+  const filteredAchievementReportRecords = achievementReportRecords
+    .filter(
+      (record) =>
+        crpReportYear === "All" || record.academicYear === crpReportYear,
+    )
+    .sort(
+      (a, b) =>
+        (b.academicYear || "").localeCompare(a.academicYear || "") ||
+        a.category.localeCompare(b.category) ||
+        (a.title || "").localeCompare(b.title || ""),
+    );
+  const reportCategorySummary = [
+    "Publication",
+    "Patent",
+    "Funding",
+    "Research",
+    "Award",
+    "Workshop",
+    "FDP",
+  ].map((category) => ({
+    category,
+    count: filteredAchievementReportRecords.filter(
+      (record) => record.category === category,
+    ).length,
+  }));
+  const handleCrpReportCsvExport = () => {
+    const escapeCsvValue = (value) =>
+      `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      ["Academic Year", "Category", "Title", "Details", "Date"],
+      ...filteredAchievementReportRecords.map((record) => [
+        record.academicYear,
+        record.category,
+        record.title,
+        record.details,
+        record.date,
+      ]),
+    ];
+    const csv = rows
+      .map((row) => row.map(escapeCsvValue).join(","))
+      .join("\r\n");
+    const file = new Blob([`\uFEFF${csv}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(file);
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = `faculty-crp-report-${crpReportYear.toLowerCase()}.csv`;
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    downloadLink.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const filteredMessageUsns = messageStudents.filter((student) => {
+    const query = messageUsnQuery.trim().toLowerCase();
+    const usn = student.studentId.toLowerCase();
+    const name = (student.studentName || "").toLowerCase();
+    return (
+      (usn.includes(query) || name.includes(query)) &&
+      !selectedMessageUsns.includes(student.studentId)
+    );
+  });
 
   return (
     <div className="erp-portal-container">
@@ -1968,7 +2365,7 @@ export default function FacultyDashboard({
           {/* ============================================================ */}
           {activeTab === "achievements" && (
             <div className="erp-tab-content">
-              {/* Horizontal Pill Bar for the 8 Achievements categories */}
+              {/* Horizontal Pill Bar for Achievements categories */}
               <div className="achievements-nav-pill-bar">
                 <button
                   type="button"
@@ -2012,19 +2409,11 @@ export default function FacultyDashboard({
                 </button>
                 <button
                   type="button"
-                  className={`achievements-pill-btn ${achievementsSubTab === "workshops" ? "active" : ""}`}
-                  onClick={() => setAchievementsSubTab("workshops")}
+                  className={`achievements-pill-btn ${achievementsSubTab === "training" ? "active" : ""}`}
+                  onClick={() => setAchievementsSubTab("training")}
                 >
                   <Users size={14} />
-                  <span>Workshops</span>
-                </button>
-                <button
-                  type="button"
-                  className={`achievements-pill-btn ${achievementsSubTab === "fdp" ? "active" : ""}`}
-                  onClick={() => setAchievementsSubTab("fdp")}
-                >
-                  <GraduationCap size={14} />
-                  <span>FDP</span>
+                  <span>Workshops / FDPs</span>
                 </button>
                 <button
                   type="button"
@@ -3248,135 +3637,207 @@ export default function FacultyDashboard({
                       <button
                         type="button"
                         className="btn-primary-action"
-                        onClick={() =>
-                          showToast("Add research scholar record dialog opened")
-                        }
+                        onClick={() => setShowResearchForm((previous) => !previous)}
                       >
-                        <Plus size={15} />
-                        <span>Log Research Record</span>
+                        {showResearchForm ? <X size={15} /> : <Plus size={15} />}
+                        <span>
+                          {showResearchForm ? "Close Form" : "Log Research Record"}
+                        </span>
                       </button>
                     </div>
 
                     <div className="p-20">
-                      <h4
-                        style={{
-                          margin: "0 0 10px 0",
-                          fontSize: "0.9rem",
-                          color: "var(--faculty-navy)",
-                          fontWeight: 800,
-                        }}
-                      >
-                        Active Research Domains
-                      </h4>
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "10px",
-                          flexWrap: "wrap",
-                          marginBottom: "1.25rem",
-                        }}
-                      >
-                        <span
-                          className="hero-pill"
-                          style={{
-                            background: "#e0f2fe",
-                            color: "#0369a1",
-                            borderColor: "#bae6fd",
-                            padding: "6px 12px",
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          Edge Computing &amp; TinyML for Embedded Vision
-                        </span>
-                        <span
-                          className="hero-pill"
-                          style={{
-                            background: "#e0f2fe",
-                            color: "#0369a1",
-                            borderColor: "#bae6fd",
-                            padding: "6px 12px",
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          Reconfigurable VLSI Architectures &amp; FPGA DSP
-                        </span>
-                        <span
-                          className="hero-pill"
-                          style={{
-                            background: "#e0f2fe",
-                            color: "#0369a1",
-                            borderColor: "#bae6fd",
-                            padding: "6px 12px",
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          IoT Wireless Sensor Networks for Environmental
-                          Telemetry
-                        </span>
-                      </div>
+                      {showResearchForm && (
+                        <div className="pub-form-card research-form-card">
+                          <div className="pub-form-header">
+                            <div className="pub-form-title-group">
+                              <Plus size={16} className="text-primary" />
+                              <div>
+                                <h3 className="pub-form-title">
+                                  Enter Research Candidate Details
+                                </h3>
+                                <p className="pub-form-desc">
+                                  Record the candidate, research topic, completion
+                                  milestones, and date
+                                </p>
+                              </div>
+                            </div>
+                          </div>
 
-                      <h4
-                        style={{
-                          margin: "0 0 10px 0",
-                          fontSize: "0.9rem",
-                          color: "var(--faculty-navy)",
-                          fontWeight: 800,
-                        }}
-                      >
-                        VTU Registered Ph.D. Scholars Under Guidance
+                          <form
+                            className="pub-form-body"
+                            onSubmit={handleResearchFormSubmit}
+                          >
+                            <div className="pub-form-grid research-form-grid">
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="research-academic-year"
+                                >
+                                  Academic Year <span className="req-star">*</span>
+                                </label>
+                                <select
+                                  id="research-academic-year"
+                                  name="academicYear"
+                                  value={researchFormData.academicYear}
+                                  onChange={handleResearchFormChange}
+                                  className="pub-form-input pub-form-select"
+                                  required
+                                >
+                                  {ACADEMIC_YEAR_OPTIONS.map((year, index) => (
+                                    <option key={year} value={year}>
+                                      {year}{index === 0 ? " (Current)" : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="research-candidate-name"
+                                >
+                                  Candidate Name
+                                </label>
+                                <input
+                                  id="research-candidate-name"
+                                  name="candidateName"
+                                  type="text"
+                                  value={researchFormData.candidateName}
+                                  onChange={handleResearchFormChange}
+                                  className="pub-form-input"
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="research-candidate-usn"
+                                >
+                                  Candidate USN
+                                </label>
+                                <input
+                                  id="research-candidate-usn"
+                                  name="candidateUsn"
+                                  type="text"
+                                  value={researchFormData.candidateUsn}
+                                  onChange={handleResearchFormChange}
+                                  className="pub-form-input"
+                                />
+                              </div>
+
+                              <div className="pub-form-field col-span-3 research-title-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="research-title"
+                                >
+                                  Research Title
+                                </label>
+                                <textarea
+                                  id="research-title"
+                                  name="researchTitle"
+                                  value={researchFormData.researchTitle}
+                                  onChange={handleResearchFormChange}
+                                  className="pub-form-input"
+                                  rows={2}
+                                />
+                              </div>
+
+                              <fieldset className="research-completion-options">
+                                <legend className="pub-field-label">
+                                  Completion Status
+                                </legend>
+                                {RESEARCH_COMPLETION_OPTIONS.map((status) => (
+                                  <label
+                                    key={status}
+                                    className="research-completion-option"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      value={status}
+                                      checked={researchFormData.completionStatus.includes(
+                                        status,
+                                      )}
+                                      onChange={handleResearchCompletionChange}
+                                    />
+                                    <span>{status}</span>
+                                  </label>
+                                ))}
+                              </fieldset>
+
+                              <div className="pub-form-field research-date-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="research-date"
+                                >
+                                  Date
+                                </label>
+                                <input
+                                  id="research-date"
+                                  name="date"
+                                  type="date"
+                                  value={researchFormData.date}
+                                  onChange={handleResearchFormChange}
+                                  className="pub-form-input"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="pub-form-actions">
+                              <button type="submit" className="btn-primary-action">
+                                <Check size={15} />
+                                <span>Add Research Record</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary-action"
+                                onClick={() => setShowResearchForm(false)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      )}
+
+                      <h4 className="research-records-heading">
+                        Research Candidate Progress Records
                       </h4>
-                      <div className="erp-table-responsive">
-                        <table className="erp-data-table">
+                      <div className="erp-table-responsive achievements-table-wrap">
+                        <table className="erp-data-table achievements-data-table">
                           <thead>
                             <tr>
-                              <th>Scholar Name</th>
-                              <th>USN</th>
-                              <th>Research Area</th>
-                              <th>Year</th>
-                              <th>Status</th>
+                              <th>Academic Year</th>
+                              <th>Candidate Name</th>
+                              <th>Candidate USN</th>
+                              <th>Research Title</th>
+                              <th>Completion Status</th>
+                              <th>Date</th>
                             </tr>
                           </thead>
                           <tbody>
-                            <tr>
-                              <td>
-                                <strong>Mrs. Priya Shenoy</strong>
-                              </td>
-                              <td>
-                                <span className="erp-code-pill">
-                                  4JK22PE001
-                                </span>
-                              </td>
-                              <td>
-                                Deep Learning Architectures for Edge UAV
-                                Detection
-                              </td>
-                              <td>2022</td>
-                              <td>
-                                <span className="status-badge completed">
-                                  Comprehensive Viva Completed
-                                </span>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td>
-                                <strong>Mr. Karthik Hegde</strong>
-                              </td>
-                              <td>
-                                <span className="erp-code-pill">
-                                  4JK23PE004
-                                </span>
-                              </td>
-                              <td>
-                                Ultra-Low Power Biosensors for Wearable
-                                Healthcare
-                              </td>
-                              <td>2023</td>
-                              <td>
-                                <span className="status-badge upcoming">
-                                  Coursework Completed
-                                </span>
-                              </td>
-                            </tr>
+                            {researchRecords.length === 0 ? (
+                              <tr>
+                                <td colSpan={6}>
+                                  No research candidate records added yet.
+                                </td>
+                              </tr>
+                            ) : (
+                              researchRecords.map((record) => (
+                                <tr key={record.id}>
+                                  <td><strong>{record.academicYear}</strong></td>
+                                  <td>{record.candidateName || "—"}</td>
+                                  <td>{record.candidateUsn || "—"}</td>
+                                  <td>{record.researchTitle || "—"}</td>
+                                  <td>
+                                    {record.completionStatus.length > 0
+                                      ? record.completionStatus.join(", ")
+                                      : "No milestones selected"}
+                                  </td>
+                                  <td>{record.date || "—"}</td>
+                                </tr>
+                              ))
+                            )}
                           </tbody>
                         </table>
                       </div>
@@ -3402,472 +3863,601 @@ export default function FacultyDashboard({
                       <button
                         type="button"
                         className="btn-primary-action"
-                        onClick={() => showToast("Add award form opened")}
+                        onClick={() => setShowAwardForm((previous) => !previous)}
                       >
-                        <Plus size={15} />
-                        <span>Add Award</span>
+                        {showAwardForm ? <X size={15} /> : <Plus size={15} />}
+                        <span>{showAwardForm ? "Close Form" : "Add Award"}</span>
                       </button>
                     </div>
 
                     <div className="p-20">
-                      <div className="award-item-row">
-                        <div className="award-icon-badge">
-                          <Award size={22} />
-                        </div>
-                        <div className="award-details">
-                          <h4>Best Faculty Researcher of the Year (2024)</h4>
-                          <p>
-                            Awarded by AJ Institute of Engineering &amp;
-                            Technology for highest number of Q1/Q2 Scopus
-                            indexed articles.
-                          </p>
-                          <div className="award-meta">
-                            Conferred on Teachers' Day 2024 • Citation &amp;
-                            Cash Prize of ₹ 25,000
+                      {showAwardForm && (
+                        <div className="pub-form-card">
+                          <div className="pub-form-header">
+                            <div className="pub-form-title-group">
+                              <Award size={16} className="text-primary" />
+                              <div>
+                                <h3 className="pub-form-title">
+                                  Enter Award Details
+                                </h3>
+                                <p className="pub-form-desc">
+                                  Add the award, awarding agency, date, and
+                                  supporting document
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
 
-                      <div className="award-item-row">
-                        <div className="award-icon-badge">
-                          <Sparkles size={22} />
-                        </div>
-                        <div className="award-details">
-                          <h4>Elevation to IEEE Senior Member (SMIEEE)</h4>
-                          <p>
-                            Elevated by the IEEE Board of Directors in
-                            recognition of significant professional
-                            contributions in signal processing.
-                          </p>
-                          <div className="award-meta">
-                            IEEE Bangalore Section • Member ID: 94104921 •
-                            Elected: Nov 2024
-                          </div>
-                        </div>
-                      </div>
+                          <form
+                            className="pub-form-body"
+                            onSubmit={handleAwardFormSubmit}
+                          >
+                            <div className="pub-form-grid">
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="award-academic-year"
+                                >
+                                  Academic Year <span className="req-star">*</span>
+                                </label>
+                                <select
+                                  id="award-academic-year"
+                                  name="academicYear"
+                                  value={awardFormData.academicYear}
+                                  onChange={handleAwardFormChange}
+                                  className="pub-form-input pub-form-select"
+                                  required
+                                >
+                                  {ACADEMIC_YEAR_OPTIONS.map((year, index) => (
+                                    <option key={year} value={year}>
+                                      {year}{index === 0 ? " (Current)" : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
 
-                      <div className="award-item-row">
-                        <div className="award-icon-badge">
-                          <Award size={22} />
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="award-name"
+                                >
+                                  Name of the Award{" "}
+                                  <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="award-name"
+                                  name="awardName"
+                                  type="text"
+                                  value={awardFormData.awardName}
+                                  onChange={handleAwardFormChange}
+                                  className="pub-form-input"
+                                  required
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="award-agency"
+                                >
+                                  Award Agency{" "}
+                                  <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="award-agency"
+                                  name="awardAgency"
+                                  type="text"
+                                  value={awardFormData.awardAgency}
+                                  onChange={handleAwardFormChange}
+                                  className="pub-form-input"
+                                  required
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="award-date"
+                                >
+                                  Date <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="award-date"
+                                  name="date"
+                                  type="date"
+                                  value={awardFormData.date}
+                                  onChange={handleAwardFormChange}
+                                  className="pub-form-input"
+                                  required
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label className="pub-field-label">
+                                  Upload Award Document
+                                </label>
+                                <label
+                                  htmlFor="award-document-upload"
+                                  className="pat-upload-box"
+                                >
+                                  <Upload size={14} className="text-primary" />
+                                  <span className="pat-upload-text">
+                                    {awardFormData.documentName ||
+                                      "Choose Certificate (PDF/Image)"}
+                                  </span>
+                                  <input
+                                    id="award-document-upload"
+                                    type="file"
+                                    accept=".pdf,.png,.jpg,.jpeg"
+                                    onChange={handleAwardUpload}
+                                    style={{ display: "none" }}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="pub-form-actions">
+                              <button type="submit" className="btn-primary-action">
+                                <Check size={14} />
+                                <span>Save Award</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary-action"
+                                onClick={() => setShowAwardForm(false)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
                         </div>
-                        <div className="award-details">
-                          <h4>
-                            Best Conference Paper Presentation Award (ICSS-23)
-                          </h4>
-                          <p>
-                            International Conference on Smart Systems for paper
-                            titled "FPGA Implementation of FFT for 5G Wireless
-                            Communications".
-                          </p>
-                          <div className="award-meta">
-                            December 2023 • Plaque &amp; Certificate of Merit
-                          </div>
-                        </div>
+                      )}
+
+                      <h4 className="research-records-heading">Award Records</h4>
+                      <div className="erp-table-responsive achievements-table-wrap">
+                        <table className="erp-data-table achievements-data-table">
+                          <thead>
+                            <tr>
+                              <th>Academic Year</th>
+                              <th>Name of the Award</th>
+                              <th>Award Agency</th>
+                              <th>Date</th>
+                              <th>Uploaded Document</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {awardsList.length === 0 ? (
+                              <tr>
+                                <td colSpan={5}>No award records added yet.</td>
+                              </tr>
+                            ) : (
+                              awardsList.map((award) => (
+                                <tr key={award.id}>
+                                  <td><strong>{award.academicYear}</strong></td>
+                                  <td>{award.awardName}</td>
+                                  <td>{award.awardAgency}</td>
+                                  <td>{award.date}</td>
+                                  <td>{award.documentName || "—"}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ---------------- 6. WORKSHOPS ---------------- */}
-              {achievementsSubTab === "workshops" && (
+              {/* ---------------- 6. WORKSHOPS / FDP ---------------- */}
+              {achievementsSubTab === "training" && (
                 <div>
                   <div className="erp-card-container">
                     <div className="erp-card-toolbar">
                       <div>
                         <h2 className="toolbar-heading">
-                          Technical Workshops Record
+                          Workshops &amp; Faculty Development Programs
                         </h2>
                         <p className="toolbar-subheading">
-                          Record of hands-on workshops conducted as resource
-                          person and skill enhancement workshops attended
+                          Record workshops and FDPs with their academic year,
+                          schedule, duration, and conducting organization
                         </p>
                       </div>
                       <button
                         type="button"
                         className="btn-primary-action"
-                        onClick={() => showToast("Log workshop dialog opened")}
+                        onClick={() =>
+                          setShowTrainingForm((previous) => !previous)
+                        }
                       >
-                        <Plus size={15} />
-                        <span>Log Workshop</span>
+                        {showTrainingForm ? <X size={15} /> : <Plus size={15} />}
+                        <span>
+                          {showTrainingForm
+                            ? "Close Form"
+                            : "Add Workshop / FDP"}
+                        </span>
                       </button>
                     </div>
 
-                    <div className="erp-table-responsive">
-                      <table className="erp-data-table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>Workshop Theme &amp; Title</th>
-                            <th>Role</th>
-                            <th>Organizing Institute</th>
-                            <th>Duration / Dates</th>
-                            <th>Audience</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>1</td>
-                            <td>
-                              <strong>
-                                Hands-on Workshop on ARM Cortex Microcontrollers
-                                &amp; RTOS for IoT
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="erp-credit-badge">
-                                Resource Person
-                              </span>
-                            </td>
-                            <td>AJIET Robotics &amp; IoT Club</td>
-                            <td>14-Mar-2026 (1 Day)</td>
-                            <td>90 UG Students</td>
-                          </tr>
-                          <tr>
-                            <td>2</td>
-                            <td>
-                              <strong>
-                                National Hands-on Workshop on LabVIEW and
-                                Real-Time FPGA Systems
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="erp-code-pill">Participant</span>
-                            </td>
-                            <td>NITK Surathkal</td>
-                            <td>18-20 Jan 2026 (3 Days)</td>
-                            <td>Faculty &amp; Scholars</td>
-                          </tr>
-                          <tr>
-                            <td>3</td>
-                            <td>
-                              <strong>
-                                IPR &amp; Patent Drafting for Engineering
-                                Innovations
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="erp-credit-badge">
-                                Keynote Speaker
-                              </span>
-                            </td>
-                            <td>AJIET IPR Cell</td>
-                            <td>08-Nov-2025 (1 Day)</td>
-                            <td>120 Faculty Members</td>
-                          </tr>
-                          <tr>
-                            <td>4</td>
-                            <td>
-                              <strong>
-                                High-Frequency 5G Antenna Simulation using Ansys
-                                HFSS
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="erp-code-pill">Participant</span>
-                            </td>
-                            <td>VTU Center for PG Studies, Muddenahalli</td>
-                            <td>12-14 Aug 2025 (3 Days)</td>
-                            <td>Faculty Delegates</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              )}
+                    <div className="p-20">
+                      {showTrainingForm && (
+                        <div className="pub-form-card">
+                          <div className="pub-form-header">
+                            <div className="pub-form-title-group">
+                              <Calendar size={16} className="text-primary" />
+                              <div>
+                                <h3 className="pub-form-title">
+                                  Add Workshop / FDP Details
+                                </h3>
+                                <p className="pub-form-desc">
+                                  Total days are calculated inclusively from
+                                  the selected dates
+                                </p>
+                              </div>
+                            </div>
+                          </div>
 
-              {/* ---------------- 7. FDP ---------------- */}
-              {achievementsSubTab === "fdp" && (
-                <div>
-                  <div className="erp-card-container">
-                    <div className="erp-card-toolbar">
-                      <div>
-                        <h2 className="toolbar-heading">
-                          Faculty Development Programs (FDPs)
-                        </h2>
-                        <p className="toolbar-subheading">
-                          AICTE ATAL, NPTEL, and University sponsored multi-day
-                          faculty enhancement programs
-                        </p>
+                          <form
+                            className="pub-form-body"
+                            onSubmit={handleTrainingFormSubmit}
+                          >
+                            <div className="pub-form-grid training-form-grid">
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-academic-year"
+                                >
+                                  Academic Year <span className="req-star">*</span>
+                                </label>
+                                <select
+                                  id="training-academic-year"
+                                  name="academicYear"
+                                  value={trainingFormData.academicYear}
+                                  onChange={handleTrainingFormChange}
+                                  className="pub-form-input pub-form-select"
+                                  required
+                                >
+                                  {ACADEMIC_YEAR_OPTIONS.map((year, index) => (
+                                    <option key={year} value={year}>
+                                      {year}{index === 0 ? " (Current)" : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-type"
+                                >
+                                  Workshop / FDP <span className="req-star">*</span>
+                                </label>
+                                <select
+                                  id="training-type"
+                                  name="type"
+                                  value={trainingFormData.type}
+                                  onChange={handleTrainingFormChange}
+                                  className="pub-form-input pub-form-select"
+                                  required
+                                >
+                                  <option value="Workshop">Workshop</option>
+                                  <option value="FDP">FDP</option>
+                                </select>
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-title"
+                                >
+                                  Title of Workshop / FDP{" "}
+                                  <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="training-title"
+                                  name="title"
+                                  type="text"
+                                  value={trainingFormData.title}
+                                  onChange={handleTrainingFormChange}
+                                  className="pub-form-input"
+                                  required
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-from-date"
+                                >
+                                  From Date <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="training-from-date"
+                                  name="fromDate"
+                                  type="date"
+                                  value={trainingFormData.fromDate}
+                                  onChange={handleTrainingFormChange}
+                                  className="pub-form-input"
+                                  required
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-to-date"
+                                >
+                                  To Date <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="training-to-date"
+                                  name="toDate"
+                                  type="date"
+                                  value={trainingFormData.toDate}
+                                  onChange={handleTrainingFormChange}
+                                  className="pub-form-input"
+                                  min={trainingFormData.fromDate || undefined}
+                                  required
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-total-days"
+                                >
+                                  Total Days
+                                </label>
+                                <input
+                                  id="training-total-days"
+                                  type="text"
+                                  value={
+                                    calculateTrainingDays(
+                                      trainingFormData.fromDate,
+                                      trainingFormData.toDate,
+                                    )
+                                      ? `${calculateTrainingDays(
+                                          trainingFormData.fromDate,
+                                          trainingFormData.toDate,
+                                        )} day(s)`
+                                      : ""
+                                  }
+                                  className="pub-form-input"
+                                  placeholder="Calculated from dates"
+                                  readOnly
+                                />
+                              </div>
+
+                              <div className="pub-form-field">
+                                <label
+                                  className="pub-field-label"
+                                  htmlFor="training-conducted-by"
+                                >
+                                  Workshop / FDP Conducted By{" "}
+                                  <span className="req-star">*</span>
+                                </label>
+                                <input
+                                  id="training-conducted-by"
+                                  name="conductedBy"
+                                  type="text"
+                                  value={trainingFormData.conductedBy}
+                                  onChange={handleTrainingFormChange}
+                                  className="pub-form-input"
+                                  required
+                                />
+                              </div>
+                            </div>
+
+                            <div className="pub-form-actions">
+                              <button type="submit" className="btn-primary-action">
+                                <Check size={14} />
+                                <span>Save Record</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary-action"
+                                onClick={() => setShowTrainingForm(false)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      )}
+
+                      <h4 className="research-records-heading">
+                        Workshop / FDP Records
+                      </h4>
+                      <div className="erp-table-responsive achievements-table-wrap">
+                        <table className="erp-data-table achievements-data-table">
+                          <thead>
+                            <tr>
+                              <th>Academic Year</th>
+                              <th>Type</th>
+                              <th>Title</th>
+                              <th>From Date</th>
+                              <th>To Date</th>
+                              <th>Total Days</th>
+                              <th>Conducted By</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {trainingRecords.length === 0 ? (
+                              <tr>
+                                <td colSpan={7}>
+                                  No workshop or FDP records added yet.
+                                </td>
+                              </tr>
+                            ) : (
+                              trainingRecords.map((record) => (
+                                <tr key={record.id}>
+                                  <td><strong>{record.academicYear}</strong></td>
+                                  <td>{record.type}</td>
+                                  <td>{record.title}</td>
+                                  <td>{record.fromDate}</td>
+                                  <td>{record.toDate}</td>
+                                  <td>{record.totalDays}</td>
+                                  <td>{record.conductedBy}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
                       </div>
-                      <button
-                        type="button"
-                        className="btn-primary-action"
-                        onClick={() => showToast("Log FDP dialog opened")}
-                      >
-                        <Plus size={15} />
-                        <span>Log FDP Record</span>
-                      </button>
-                    </div>
-
-                    <div className="erp-table-responsive">
-                      <table className="erp-data-table">
-                        <thead>
-                          <tr>
-                            <th>#</th>
-                            <th>FDP Program Title</th>
-                            <th>Category / Agency</th>
-                            <th>Host Institution</th>
-                            <th>Duration &amp; Dates</th>
-                            <th>Certificate</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td>1</td>
-                            <td>
-                              <strong>
-                                5-Day National FDP on "AI &amp; Machine Learning
-                                in Signal Processing"
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="grant-pill">
-                                IEEE Bangalore Section
-                              </span>
-                            </td>
-                            <td>AJIET Mangaluru (As Coordinator)</td>
-                            <td>22-26 Jul 2026 (5 Days)</td>
-                            <td>
-                              <span className="status-badge completed">
-                                Coordinator Certificate ✓
-                              </span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>2</td>
-                            <td>
-                              <strong>
-                                AICTE ATAL 1-Week FDP on "Edge Computing &amp;
-                                TinyML for Smart Healthcare"
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="grant-pill">
-                                AICTE ATAL Academy
-                              </span>
-                            </td>
-                            <td>IIT Mandi (Online Mode)</td>
-                            <td>15-20 Jan 2026 (1 Week)</td>
-                            <td>
-                              <span className="status-badge completed">
-                                Grade A Certificate ✓
-                              </span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>3</td>
-                            <td>
-                              <strong>
-                                NPTEL-AICTE FDP on "Digital VLSI System Design"
-                                (12 Weeks)
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="grant-pill">MHRD / NPTEL</span>
-                            </td>
-                            <td>IIT Madras</td>
-                            <td>Jul - Oct 2025 (12 Weeks)</td>
-                            <td>
-                              <span className="status-badge completed">
-                                Elite + Silver Medal ✓
-                              </span>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td>4</td>
-                            <td>
-                              <strong>
-                                FDP on "Pedagogical Innovations in Outcome-Based
-                                Education (OBE)"
-                              </strong>
-                            </td>
-                            <td>
-                              <span className="grant-pill">
-                                Internal Quality (IQAC)
-                              </span>
-                            </td>
-                            <td>AJIET Campus</td>
-                            <td>10-14 Feb 2025 (5 Days)</td>
-                            <td>
-                              <span className="status-badge completed">
-                                Certified ✓
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ---------------- 8. REPORT GENERATION ---------------- */}
+              {/* ---------------- 7. REPORT GENERATION ---------------- */}
               {achievementsSubTab === "reports" && (
                 <div>
                   <div className="erp-card-container">
                     <div className="erp-card-toolbar">
                       <div>
                         <h2 className="toolbar-heading">
-                          Accreditation &amp; Performance Appraisal Report
-                          Generation
+                          Consolidated Research Profile (CRP) Report
                         </h2>
                         <p className="toolbar-subheading">
-                          Generate and download official compliance reports for
-                          NBA, NAAC, VTU, and Annual Faculty Appraisal
+                          Review achievements across publications, patents,
+                          funding, research, awards, workshops, and FDPs
                         </p>
                       </div>
                     </div>
 
                     <div className="p-20">
-                      <div className="report-cards-grid">
-                        {/* Report 1: NBA Criteria 5 */}
-                        <div className="report-export-card">
-                          <div className="report-card-top">
-                            <h4>
-                              NBA Criterion 5 Faculty Contributions Report
-                            </h4>
-                            <p>
-                              Compiles publications, FDPs attended/conducted,
-                              patents, faculty interaction with outside world,
-                              and R&amp;D grants formatted for NBA Peer Team.
-                            </p>
-                          </div>
-                          <div className="report-card-actions">
-                            <button
-                              type="button"
-                              className="btn-primary-action"
-                              onClick={() =>
-                                showToast(
-                                  "NBA Criterion 5 Report (PDF) generated and download started!",
-                                )
-                              }
-                            >
-                              <Download size={14} />
-                              <span>Export PDF</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary-action"
-                              onClick={() =>
-                                showToast("NBA Excel Sheet downloaded")
-                              }
-                            >
-                              <span>Excel (.xlsx)</span>
-                            </button>
-                          </div>
+                      <div className="crp-report-controls">
+                        <div className="pub-form-field crp-report-year-field">
+                          <label
+                            className="pub-field-label"
+                            htmlFor="crp-report-year"
+                          >
+                            Academic Year
+                          </label>
+                          <select
+                            id="crp-report-year"
+                            className="pub-form-input pub-form-select"
+                            value={crpReportYear}
+                            onChange={(event) =>
+                              setCrpReportYear(event.target.value)
+                            }
+                          >
+                            <option value="All">All Academic Years</option>
+                            {reportAcademicYears.map((year) => (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            ))}
+                          </select>
                         </div>
-
-                        {/* Report 2: NAAC Criteria 3 */}
-                        <div className="report-export-card">
-                          <div className="report-card-top">
-                            <h4>
-                              NAAC Criterion 3 Research, Innovations &amp;
-                              Extension
-                            </h4>
-                            <p>
-                              Includes indexed journal metrics, citations,
-                              h-index, books/chapters published, funded research
-                              projects, and consultancy records.
-                            </p>
-                          </div>
-                          <div className="report-card-actions">
-                            <button
-                              type="button"
-                              className="btn-primary-action"
-                              onClick={() =>
-                                showToast(
-                                  "NAAC Criterion 3 Report (PDF) downloaded!",
-                                )
-                              }
-                            >
-                              <Download size={14} />
-                              <span>Export PDF</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary-action"
-                              onClick={() =>
-                                showToast("NAAC Excel Sheet downloaded")
-                              }
-                            >
-                              <span>Excel (.xlsx)</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Report 3: VTU PBAS Self-Appraisal */}
-                        <div className="report-export-card">
-                          <div className="report-card-top">
-                            <h4>
-                              VTU Performance Based Appraisal System (PBAS)
-                            </h4>
-                            <p>
-                              Annual faculty self-appraisal score sheet
-                              computing Category I (Teaching), Category II
-                              (Co-curricular), and Category III (Research) API
-                              scores.
-                            </p>
-                          </div>
-                          <div className="report-card-actions">
-                            <button
-                              type="button"
-                              className="btn-primary-action"
-                              onClick={() =>
-                                showToast("VTU PBAS Report (PDF) downloaded!")
-                              }
-                            >
-                              <Download size={14} />
-                              <span>Export PDF</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary-action"
-                              onClick={() =>
-                                showToast("PBAS Score Excel downloaded")
-                              }
-                            >
-                              <span>Excel (.xlsx)</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Report 4: Consolidated CV Dossier */}
-                        <div className="report-export-card">
-                          <div className="report-card-top">
-                            <h4>
-                              Complete Consolidated Faculty Dossier &amp;
-                              Bio-Data
-                            </h4>
-                            <p>
-                              Executive biographical curriculum vitae combining
-                              qualifications, teaching load, publications,
-                              grants, and university bodies membership.
-                            </p>
-                          </div>
-                          <div className="report-card-actions">
-                            <button
-                              type="button"
-                              className="btn-primary-action"
-                              onClick={() => window.print()}
-                            >
-                              <Printer size={14} />
-                              <span>Print / PDF CV</span>
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-secondary-action"
-                              onClick={() =>
-                                showToast("Dossier link copied to clipboard")
-                              }
-                            >
-                              <Share2 size={13} />
-                              <span>Share Link</span>
-                            </button>
-                          </div>
+                        <div className="crp-report-actions">
+                          <button
+                            type="button"
+                            className="btn-secondary-action"
+                            onClick={handleCrpReportCsvExport}
+                          >
+                            <Download size={14} />
+                            <span>Export CSV</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-primary-action"
+                            onClick={() => window.print()}
+                          >
+                            <Printer size={14} />
+                            <span>Print / Save PDF</span>
+                          </button>
                         </div>
                       </div>
+
+                      <section className="crp-report-sheet">
+                        <header className="crp-report-heading">
+                          <div>
+                            <span className="crp-report-kicker">
+                              AJIET • Faculty Achievements
+                            </span>
+                            <h3>Consolidated Research Profile</h3>
+                            <p>
+                              Academic Year:{" "}
+                              <strong>
+                                {crpReportYear === "All"
+                                  ? "All Years"
+                                  : crpReportYear}
+                              </strong>
+                              {" • "}Generated: {currentDate || "Today"}
+                            </p>
+                          </div>
+                          <div className="crp-report-faculty">
+                            <strong>{facultyDisplayName || "Faculty"}</strong>
+                            <span>
+                              {profileData.department || "Department not provided"}
+                            </span>
+                            {profileData.facultyId && (
+                              <span>Faculty ID: {profileData.facultyId}</span>
+                            )}
+                          </div>
+                        </header>
+
+                        <div className="crp-report-total">
+                          <span>Total achievement records</span>
+                          <strong>{filteredAchievementReportRecords.length}</strong>
+                        </div>
+
+                        <div className="crp-report-summary-grid">
+                          {reportCategorySummary.map((summary) => (
+                            <div
+                              className="crp-report-summary-card"
+                              key={summary.category}
+                            >
+                              <span>{summary.category}</span>
+                              <strong>{summary.count}</strong>
+                              <small>
+                                {summary.count === 1 ? "record" : "records"}
+                              </small>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="crp-report-table-section">
+                          <h4>Achievement Details</h4>
+                          <div className="erp-table-responsive crp-report-table-wrap">
+                            <table className="erp-data-table achievements-data-table crp-report-table">
+                              <thead>
+                                <tr>
+                                  <th>Academic Year</th>
+                                  <th>Category</th>
+                                  <th>Title / Record</th>
+                                  <th>Details</th>
+                                  <th>Date</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {filteredAchievementReportRecords.length ===
+                                0 ? (
+                                  <tr>
+                                    <td colSpan={5}>
+                                      No achievement records are available for
+                                      the selected academic year.
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  filteredAchievementReportRecords.map(
+                                    (record) => (
+                                      <tr key={record.id}>
+                                        <td>{record.academicYear || "—"}</td>
+                                        <td>{record.category}</td>
+                                        <td>{record.title || "—"}</td>
+                                        <td>{record.details || "—"}</td>
+                                        <td>{record.date || "—"}</td>
+                                      </tr>
+                                    ),
+                                  )
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </section>
                     </div>
                   </div>
                 </div>
@@ -5118,7 +5708,8 @@ export default function FacultyDashboard({
                 <div>
                   <h2 className="toolbar-heading">Message Students</h2>
                   <p className="toolbar-subheading">
-                    Compose a message for all students or selected USNs.
+                    Message students matching their registered academic year,
+                    semester, and section.
                   </p>
                 </div>
               </div>
@@ -5127,8 +5718,129 @@ export default function FacultyDashboard({
                 <form className="message-composer" onSubmit={handleSendMessage}>
                   <div className="message-section-heading">
                     <h3>Recipients</h3>
-                    <span>Choose who should receive this message.</span>
+                    <span>
+                      Select a class first. Students are limited to your
+                      assigned department and section.
+                    </span>
                   </div>
+
+                  <div className="message-cohort-filters">
+                    <div className="pub-form-field">
+                      <label
+                        className="pub-field-label"
+                        htmlFor="message-academic-year"
+                      >
+                        Academic Year
+                      </label>
+                      <select
+                        id="message-academic-year"
+                        className="pub-form-input pub-form-select"
+                        value={messageAcademicYear}
+                        disabled={loading || availableMessageYears.length === 0}
+                        onChange={(event) => {
+                          setMessageAcademicYear(event.target.value);
+                          setMessageSemester("");
+                          setMessageSection("");
+                          setSelectedMessageUsns([]);
+                        }}
+                      >
+                        <option value="">Select academic year</option>
+                        {availableMessageYears.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="pub-form-field">
+                      <label
+                        className="pub-field-label"
+                        htmlFor="message-semester"
+                      >
+                        Semester
+                      </label>
+                      <select
+                        id="message-semester"
+                        className="pub-form-input pub-form-select"
+                        value={messageSemester}
+                        disabled={!messageAcademicYear}
+                        onChange={(event) => {
+                          setMessageSemester(event.target.value);
+                          setMessageSection("");
+                          setSelectedMessageUsns([]);
+                        }}
+                      >
+                        <option value="">Select semester</option>
+                        {availableMessageSemesters.map((semester) => (
+                          <option key={semester} value={semester}>
+                            Semester {semester}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="pub-form-field">
+                      <label
+                        className="pub-field-label"
+                        htmlFor="message-section"
+                      >
+                        Section
+                      </label>
+                      <select
+                        id="message-section"
+                        className="pub-form-input pub-form-select"
+                        value={messageSection}
+                        disabled={!messageSemester}
+                        onChange={(event) => {
+                          setMessageSection(event.target.value);
+                          setSelectedMessageUsns([]);
+                        }}
+                      >
+                        <option value="">Select section</option>
+                        {availableMessageSections.map((section) => (
+                          <option key={section} value={section}>
+                            {section}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {messageStudentsLoading && (
+                    <p className="message-student-status" role="status">
+                      Loading students for the selected class...
+                    </p>
+                  )}
+                  {assignedSubjectsError && (
+                    <p className="message-student-status error" role="alert">
+                      {assignedSubjectsError}
+                    </p>
+                  )}
+                  {!loading &&
+                    !assignedSubjectsError &&
+                    availableMessageYears.length === 0 && (
+                      <p className="message-student-status" role="status">
+                        No subject assignments are available for this faculty
+                        account.
+                      </p>
+                    )}
+                  {messageStudentsError && (
+                    <p className="message-student-status error" role="alert">
+                      {messageStudentsError}
+                    </p>
+                  )}
+                  {!messageStudentsLoading &&
+                    !messageStudentsError &&
+                    messageAcademicYear &&
+                    messageSemester &&
+                    messageSection && (
+                      <p className="message-student-status" role="status">
+                        {messageStudents.length
+                          ? `${messageStudents.length} matching student${messageStudents.length === 1 ? "" : "s"} found.`
+                          : "No registered students match this academic year, semester, section, and department."}
+                      </p>
+                    )}
 
                   <div className="message-recipient-modes">
                     <label
@@ -5142,8 +5854,10 @@ export default function FacultyDashboard({
                         onChange={() => setMessageRecipientMode("all")}
                       />
                       <span>
-                        <strong>All Students</strong>
-                        <small>Send to the entire student body</small>
+                        <strong>All Students in Selected Section</strong>
+                        <small>
+                          Send to every registered student matching the filters
+                        </small>
                       </span>
                     </label>
 
@@ -5158,8 +5872,8 @@ export default function FacultyDashboard({
                         onChange={() => setMessageRecipientMode("selected")}
                       />
                       <span>
-                        <strong>Select by USN</strong>
-                        <small>Choose specific student recipients</small>
+                        <strong>Select Specific USNs</strong>
+                        <small>Choose individual matching students</small>
                       </span>
                     </label>
                   </div>
@@ -5168,7 +5882,32 @@ export default function FacultyDashboard({
                     <div className="message-usn-picker">
                       <div className="message-section-heading">
                         <h3>Student USNs</h3>
-                        <span>{selectedMessageUsns.length} selected</span>
+                        <span>
+                          {selectedMessageUsns.length} of {messageStudents.length}{" "}
+                          selected
+                        </span>
+                      </div>
+                      <div className="message-recipient-selection-actions">
+                        <button
+                          type="button"
+                          className="btn-secondary-action"
+                          disabled={messageStudents.length === 0}
+                          onClick={() =>
+                            setSelectedMessageUsns(
+                              messageStudents.map((student) => student.studentId),
+                            )
+                          }
+                        >
+                          Select All Matching
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-secondary-action"
+                          disabled={selectedMessageUsns.length === 0}
+                          onClick={() => setSelectedMessageUsns([])}
+                        >
+                          Clear Selection
+                        </button>
                       </div>
                       {selectedMessageUsns.length > 0 && (
                         <div className="message-selected-usns">
@@ -5196,12 +5935,15 @@ export default function FacultyDashboard({
                         <input
                           type="search"
                           className="pub-form-input"
+                          disabled={
+                            messageStudentsLoading || messageStudents.length === 0
+                          }
                           role="combobox"
                           aria-label="Search student USN"
                           aria-autocomplete="list"
                           aria-expanded={isMessageUsnDropdownOpen}
                           aria-controls="faculty-message-usn-options"
-                          placeholder="Search or select a student USN"
+                          placeholder="Search USN or student name"
                           value={messageUsnQuery}
                           onFocus={() => setIsMessageUsnDropdownOpen(true)}
                           onBlur={() => setIsMessageUsnDropdownOpen(false)}
@@ -5221,25 +5963,25 @@ export default function FacultyDashboard({
                             aria-label="Available student USNs"
                           >
                             {filteredMessageUsns.length > 0 ? (
-                              filteredMessageUsns.map((usn) => (
+                              filteredMessageUsns.map((student) => (
                                 <button
                                   type="button"
                                   className="message-usn-option"
                                   role="option"
                                   aria-selected="false"
-                                  key={usn}
+                                  key={student.studentId}
                                   onMouseDown={(event) =>
                                     event.preventDefault()
                                   }
                                   onClick={() => {
                                     setSelectedMessageUsns((previous) => [
                                       ...previous,
-                                      usn,
+                                      student.studentId,
                                     ]);
                                     setMessageUsnQuery("");
                                   }}
                                 >
-                                  {usn}
+                                  {student.studentId} — {student.studentName}
                                 </button>
                               ))
                             ) : (
@@ -5250,10 +5992,6 @@ export default function FacultyDashboard({
                           </div>
                         )}
                       </div>
-                      <p className="message-sample-note">
-                        Sample USNs are shown for now; student recipients will
-                        be loaded from the roster later.
-                      </p>
                     </div>
                   )}
 
@@ -5323,7 +6061,7 @@ export default function FacultyDashboard({
                             <strong>
                               {message.recipientMode === "all"
                                 ? "All Students"
-                                : `${message.recipients.length} selected USN${message.recipients.length === 1 ? "" : "s"}`}
+                                : `${message.recipients.length} recipient${message.recipients.length === 1 ? "" : "s"}`}
                             </strong>
                             <time>{message.sentAt}</time>
                           </div>
