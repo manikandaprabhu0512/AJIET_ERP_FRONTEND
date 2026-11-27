@@ -897,7 +897,7 @@ export default function FacultyDashboard({
         setLoading(true);
         setAssignedSubjects([]);
         setAssignedSubjectsError("");
-        const list = await getFacultyAssignedSubjectsApi(profileData.facultyId);
+        const list = await getFacultyAssignedSubjectsApi(authToken);
         if (isCurrent) setAssignedSubjects(list);
       } catch (err) {
         if (isCurrent) {
@@ -914,7 +914,7 @@ export default function FacultyDashboard({
     return () => {
       isCurrent = false;
     };
-  }, [profileLoading, profileData.facultyId]);
+  }, [profileLoading, profileData.facultyId, authToken]);
 
   const showToast = (msg) => {
     setNotification(msg);
@@ -1399,7 +1399,7 @@ export default function FacultyDashboard({
     selectedSubject?.totalHours;
 
   useEffect(() => {
-    if (!selectedSubjectCode || !profileData.facultyId) {
+    if (!selectedSubjectCode || !profileData.facultyId || !authToken) {
       setSubjectRoster([]);
       setSubjectRosterError("");
       setSubjectRosterLoading(false);
@@ -1411,7 +1411,7 @@ export default function FacultyDashboard({
     setSubjectRosterError("");
     setSubjectRosterLoading(true);
     getFacultySubjectRosterApi({
-      facultyId: profileData.facultyId,
+      token: authToken,
       subjectCode: selectedSubjectCode,
       semester: selectedSubjectSemester,
       section: selectedSubjectSection,
@@ -1441,6 +1441,7 @@ export default function FacultyDashboard({
     selectedSubjectSection,
     selectedSubjectAcademicYear,
     profileData.facultyId,
+    authToken,
   ]);
 
   // Filtered Publications by Academic Year
@@ -4676,7 +4677,7 @@ export default function FacultyDashboard({
                                 ) : subjectRoster.length === 0 ? (
                                   <tr>
                                     <td colSpan="5">
-                                      No students are enrolled in this subject for the selected semester and section.
+                                      No students match this subject's department, academic year, semester, and section.
                                     </td>
                                   </tr>
                                 ) : subjectRoster.map((record, index) => {
@@ -4921,7 +4922,7 @@ export default function FacultyDashboard({
                                 ) : subjectRoster.length === 0 ? (
                                   <tr>
                                     <td colSpan="8">
-                                      No students are enrolled in this subject for the selected semester and section.
+                                      No students match this subject's department, academic year, semester, and section.
                                     </td>
                                   </tr>
                                 ) : subjectRoster.map((record, index) => {

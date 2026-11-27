@@ -5,6 +5,7 @@ import Footer from "../common/Footer";
 import {
   getDepartmentOverviewApi,
   getFacultiesApi,
+  getHodStudentsApi,
   getCurriculumSchemesApi,
   getCurriculumSubjectsApi,
   createCurriculumSubjectApi,
@@ -25,6 +26,9 @@ import {
   Calendar,
   MessageSquare,
   ClipboardCheck,
+  GraduationCap,
+  Eye,
+  X,
 } from "lucide-react";
 
 const subjectCategories = [
@@ -35,6 +39,100 @@ const subjectCategories = [
   "Non-Credit",
 ];
 const semesterOptions = Array.from({ length: 8 }, (_, index) => index + 1);
+const getPaginationItems = (currentPage, totalPages) => {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+  if (currentPage <= 3) return [1, 2, 3, "...", totalPages];
+  if (currentPage >= totalPages - 2) {
+    return [1, "...", totalPages - 2, totalPages - 1, totalPages];
+  }
+  return [
+    1,
+    "...",
+    currentPage - 1,
+    currentPage,
+    currentPage + 1,
+    "...",
+    totalPages,
+  ];
+};
+const studentProfileSections = [
+  {
+    title: "Academic & Admission",
+    fields: [
+      ["usn", "USN"],
+      ["program_type", "Program Level"],
+      ["branch", "Department / Branch"],
+      ["enrolled_year", "Enrolled Year"],
+      ["academic_year", "Academic Year"],
+      ["current_semester", "Current Semester"],
+      ["section", "Section"],
+      ["admission_quota", "Admission Quota"],
+    ],
+  },
+  {
+    title: "Personal Details",
+    fields: [
+      ["dob", "Date of Birth"],
+      ["gender", "Gender"],
+      ["blood_group", "Blood Group"],
+      ["religion", "Religion"],
+      ["caste", "Caste"],
+      ["category", "Category"],
+      ["aadhaar_number", "Aadhaar Number"],
+      ["abc_id", "ABC ID"],
+      ["student_ssid", "Student SSID"],
+      ["place_of_stay", "Place of Stay"],
+    ],
+  },
+  {
+    title: "Education Details",
+    fields: [
+      ["sslc_percentage", "SSLC / 10th Percentage"],
+      ["studied_kannada_in_sslc", "Studied Kannada in SSLC"],
+      ["puc_pcm_percentage", "PUC / 12th PCM Percentage"],
+      ["puc_total_percentage", "PUC / 12th Total Percentage"],
+      ["diploma_percentage", "Diploma Percentage"],
+      ["ug_cgpa", "UG CGPA"],
+    ],
+  },
+  {
+    title: "Contact & Address",
+    fields: [
+      ["email", "Email"],
+      ["mobile_country_code", "Mobile Country Code"],
+      ["mobile", "Mobile"],
+      ["address_line1", "Address"],
+      ["city", "City"],
+      ["district", "District"],
+      ["state", "State"],
+      ["pincode", "PIN Code"],
+    ],
+  },
+  {
+    title: "Parent / Guardian Details",
+    fields: [
+      ["father_name", "Father's Name"],
+      ["father_occupation", "Father's Occupation"],
+      ["father_mobile_country_code", "Father's Mobile Country Code"],
+      ["father_mobile", "Father's Mobile"],
+      ["mother_name", "Mother's Name"],
+      ["mother_occupation", "Mother's Occupation"],
+      ["mother_mobile_country_code", "Mother's Mobile Country Code"],
+      ["mother_mobile", "Mother's Mobile"],
+    ],
+  },
+  {
+    title: "PG / Hostel Contact",
+    fields: [
+      ["pg_owner_name", "PG Owner Name"],
+      ["pg_contact_country_code", "PG Contact Country Code"],
+      ["pg_contact_number", "PG Contact Number"],
+      ["pg_address", "PG Address"],
+    ],
+  },
+];
 
 const getAcademicYearOptions = () => {
   const currentYear = new Date().getFullYear();
@@ -66,6 +164,8 @@ export default function HodDashboard({
 
   // Department state
   const deptCode = (currentUser?.deptCode || "EC").trim().toUpperCase();
+  const authToken =
+    currentUser?.token || localStorage.getItem("ajiet_auth_token") || "";
   const [deptName, setDeptName] = useState(
     currentUser?.deptName || "Electronics & Communication Engineering",
   );
@@ -76,6 +176,24 @@ export default function HodDashboard({
 
   // Data
   const [faculties, setFaculties] = useState([]);
+  const [studentEnrolledYears, setStudentEnrolledYears] = useState([]);
+  const [selectedStudentYear, setSelectedStudentYear] = useState("");
+  const [studentSemesterFilter, setStudentSemesterFilter] = useState("");
+  const [studentSectionFilter, setStudentSectionFilter] = useState("");
+  const [studentUsnSearch, setStudentUsnSearch] = useState("");
+  const [debouncedStudentUsnSearch, setDebouncedStudentUsnSearch] =
+    useState("");
+  const [studentPage, setStudentPage] = useState(1);
+  const [studentPerPage, setStudentPerPage] = useState(10);
+  const [studentTotal, setStudentTotal] = useState(0);
+  const [studentTotalPages, setStudentTotalPages] = useState(0);
+  const [studentSemesterOptions, setStudentSemesterOptions] = useState([]);
+  const [studentSectionOptions, setStudentSectionOptions] = useState([]);
+  const [departmentStudents, setDepartmentStudents] = useState([]);
+  const [studentListLoading, setStudentListLoading] = useState(false);
+  const [studentYearsLoading, setStudentYearsLoading] = useState(false);
+  const [studentListError, setStudentListError] = useState("");
+  const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
   const [iaSubmissions] = useState([]);
   const [leaveRequests] = useState([]);
   const [selectedIaSubmissionId, setSelectedIaSubmissionId] = useState("");
@@ -161,6 +279,122 @@ export default function HodDashboard({
     }
     loadInitialData();
   }, [deptCode]);
+
+  useEffect(() => {
+    if (activeTab !== "students") return undefined;
+
+    let isCurrentRequest = true;
+    async function loadStudentEnrolledYears() {
+      if (!authToken) {
+        setStudentListError("A valid HOD login session is required.");
+        setStudentEnrolledYears([]);
+        setSelectedStudentYear("");
+        setStudentYearsLoading(false);
+        return;
+      }
+
+      try {
+        setStudentYearsLoading(true);
+        setStudentListError("");
+        const data = await getHodStudentsApi(authToken);
+        if (!isCurrentRequest) return;
+
+        const years = data.enrolledYears || [];
+        setStudentEnrolledYears(years);
+        setSelectedStudentYear((currentYear) =>
+          years.includes(currentYear) ? currentYear : years[0] || "",
+        );
+      } catch (error) {
+        if (!isCurrentRequest) return;
+        console.error("Failed to load department student years:", error);
+        setStudentEnrolledYears([]);
+        setSelectedStudentYear("");
+        setStudentListError(error.message || "Failed to load enrolled years.");
+      } finally {
+        if (isCurrentRequest) setStudentYearsLoading(false);
+      }
+    }
+
+    loadStudentEnrolledYears();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [activeTab, authToken]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedStudentUsnSearch(studentUsnSearch.trim());
+      setStudentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [studentUsnSearch]);
+
+  useEffect(() => {
+    if (activeTab !== "students" || !selectedStudentYear || !authToken) {
+      setDepartmentStudents([]);
+      setStudentSemesterOptions([]);
+      setStudentSectionOptions([]);
+      setStudentTotal(0);
+      setStudentTotalPages(0);
+      setStudentListLoading(false);
+      return undefined;
+    }
+
+    let isCurrentRequest = true;
+    async function loadDepartmentStudents() {
+      try {
+        setDepartmentStudents([]);
+        setStudentListLoading(true);
+        setStudentListError("");
+        const data = await getHodStudentsApi(authToken, {
+          enrolledYear: selectedStudentYear,
+          semester: studentSemesterFilter,
+          section: studentSectionFilter,
+          usn: debouncedStudentUsnSearch,
+          page: studentPage,
+          perPage: studentPerPage,
+        });
+        if (isCurrentRequest) {
+          setDepartmentStudents(data.students || []);
+          setStudentSemesterOptions(data.semesters || []);
+          setStudentSectionOptions(data.sections || []);
+          setStudentTotal(Number(data.pagination?.total || 0));
+          setStudentTotalPages(Number(data.pagination?.totalPages || 0));
+          setStudentPage(Number(data.pagination?.page || 1));
+        }
+      } catch (error) {
+        if (!isCurrentRequest) return;
+        console.error("Failed to load department students:", error);
+        setDepartmentStudents([]);
+        setStudentListError(error.message || "Failed to load department students.");
+      } finally {
+        if (isCurrentRequest) setStudentListLoading(false);
+      }
+    }
+
+    loadDepartmentStudents();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [
+    activeTab,
+    authToken,
+    debouncedStudentUsnSearch,
+    selectedStudentYear,
+    studentPage,
+    studentPerPage,
+    studentSectionFilter,
+    studentSemesterFilter,
+  ]);
+
+  useEffect(() => {
+    if (!selectedStudentProfile) return undefined;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setSelectedStudentProfile(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedStudentProfile]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -435,6 +669,13 @@ export default function HodDashboard({
   const selectedSubject = allotmentSubjects.find(
     (subject) => String(subject.id) === selectedSubjectCode,
   );
+  const studentPaginationItems = getPaginationItems(
+    studentPage,
+    studentTotalPages,
+  );
+  const hasStudentFilters = Boolean(
+    studentSemesterFilter || studentSectionFilter || debouncedStudentUsnSearch,
+  );
   const assignedSubjectCount = new Set(
     subjectAllotments.map((allotment) => allotment.subject_code),
   ).size;
@@ -445,6 +686,13 @@ export default function HodDashboard({
       miniLabel: "Faculties",
       subtitle: `${faculties.length} teaching staff`,
       icon: Users,
+    },
+    {
+      id: "students",
+      label: "Student List",
+      miniLabel: "Students",
+      subtitle: `${departmentStudents.length} students`,
+      icon: GraduationCap,
     },
     {
       id: "curriculum",
@@ -1515,6 +1763,339 @@ export default function HodDashboard({
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {activeTab === "students" && (
+            <div className="erp-tab-content">
+              <div className="erp-card-container p-20">
+                <div className="roster-top-bar student-list-toolbar">
+                  <div>
+                    <h2 className="content-heading">Student List</h2>
+                    <p className="content-subheading">
+                      View students enrolled in {deptName}. Department access
+                      is restricted to your HOD account.
+                    </p>
+                  </div>
+                  <div className="student-year-filter">
+                    <label htmlFor="student-enrolled-year">
+                      Enrolled Year / Batch
+                    </label>
+                    <select
+                      id="student-enrolled-year"
+                      className="pub-form-input pub-form-select"
+                      value={selectedStudentYear}
+                      disabled={studentYearsLoading || studentEnrolledYears.length === 0}
+                      onChange={(event) => {
+                        setSelectedStudentYear(event.target.value);
+                        setStudentSemesterFilter("");
+                        setStudentSectionFilter("");
+                        setStudentUsnSearch("");
+                        setSelectedStudentProfile(null);
+                      }}
+                    >
+                      <option value="">
+                        {studentYearsLoading
+                          ? "Loading enrolled years..."
+                          : "Select enrolled year"}
+                      </option>
+                      {studentEnrolledYears.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="student-list-filters">
+                  <div className="student-year-filter">
+                    <label htmlFor="student-semester-filter">Semester</label>
+                    <select
+                      id="student-semester-filter"
+                      className="pub-form-input pub-form-select"
+                      value={studentSemesterFilter}
+                      disabled={studentListLoading || departmentStudents.length === 0}
+                      onChange={(event) => {
+                        setStudentSemesterFilter(event.target.value);
+                        setStudentPage(1);
+                      }}
+                    >
+                      <option value="">All Semesters</option>
+                      {studentSemesterOptions.map((semester) => (
+                        <option key={semester} value={semester}>
+                          {semester}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="student-year-filter">
+                    <label htmlFor="student-section-filter">Section</label>
+                    <select
+                      id="student-section-filter"
+                      className="pub-form-input pub-form-select"
+                      value={studentSectionFilter}
+                      disabled={studentListLoading || departmentStudents.length === 0}
+                      onChange={(event) => {
+                        setStudentSectionFilter(event.target.value);
+                        setStudentPage(1);
+                      }}
+                    >
+                      <option value="">All Sections</option>
+                      {studentSectionOptions.map((section) => (
+                        <option key={section} value={section}>
+                          {section}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="student-year-filter">
+                    <label htmlFor="student-usn-search">Search by USN</label>
+                    <input
+                      id="student-usn-search"
+                      className="pub-form-input"
+                      type="search"
+                      placeholder="Enter USN"
+                      value={studentUsnSearch}
+                      maxLength={20}
+                      disabled={studentListLoading || departmentStudents.length === 0}
+                      onChange={(event) => {
+                        setStudentUsnSearch(event.target.value);
+                        setStudentPage(1);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {studentListError && (
+                  <div className="student-list-feedback error" role="alert">
+                    {studentListError}
+                  </div>
+                )}
+
+                <div className="student-list-count">
+                  {studentListLoading
+                    ? "Loading students..."
+                    : studentTotal === 0
+                      ? `Showing 0 students${selectedStudentYear ? ` in the ${selectedStudentYear} batch` : ""}`
+                      : `Showing ${(studentPage - 1) * studentPerPage + 1}-${Math.min(studentPage * studentPerPage, studentTotal)} of ${studentTotal} students${selectedStudentYear ? ` in the ${selectedStudentYear} batch` : ""}`}
+                </div>
+
+                <div className="erp-table-responsive">
+                  <table className="erp-data-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>USN</th>
+                        <th>Student Name</th>
+                        <th>Program / Branch</th>
+                        <th>Semester</th>
+                        <th>Section</th>
+                        <th>Profile</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentListLoading ? (
+                        <tr>
+                          <td colSpan="7" className="table-empty-notice">
+                            Loading department students...
+                          </td>
+                        </tr>
+                      ) : !selectedStudentYear ? (
+                        <tr>
+                          <td colSpan="7" className="table-empty-notice">
+                            {studentEnrolledYears.length
+                              ? "Select an enrolled year to view students."
+                              : "No enrolled-year cohorts were found for this department."}
+                          </td>
+                        </tr>
+                      ) : studentTotal === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="table-empty-notice">
+                            {hasStudentFilters
+                              ? "No students match the selected filters."
+                              : "No students found for this enrolled year."}
+                          </td>
+                        </tr>
+                      ) : (
+                        departmentStudents.map((student, index) => (
+                          <tr key={student.usn}>
+                            <td className="cell-idx">
+                              {(studentPage - 1) * studentPerPage + index + 1}
+                            </td>
+                            <td>
+                              <span className="erp-code-pill">{student.usn}</span>
+                            </td>
+                            <td>
+                              <strong>{student.full_name}</strong>
+                            </td>
+                            <td>{student.branch}</td>
+                            <td>{student.current_semester || "—"}</td>
+                            <td>{student.section || "—"}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="student-profile-view-button"
+                                onClick={() => setSelectedStudentProfile(student)}
+                                aria-label={`View profile for ${student.full_name}`}
+                              >
+                                <Eye size={15} />
+                                View Profile
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="student-pagination-footer">
+                  <label className="student-page-size">
+                    <span>Rows per page</span>
+                    <select
+                      className="pub-form-input pub-form-select"
+                      value={studentPerPage}
+                      disabled={!selectedStudentYear || studentYearsLoading}
+                      onChange={(event) => {
+                        setStudentPerPage(Number(event.target.value));
+                        setStudentPage(1);
+                      }}
+                    >
+                      {[10, 25, 50, 100].map((pageSize) => (
+                        <option key={pageSize} value={pageSize}>
+                          {pageSize}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  {studentTotalPages > 1 && (
+                    <nav
+                      className="student-pagination"
+                      aria-label="Student list pagination"
+                    >
+                      <button
+                        type="button"
+                        className="student-pagination-button"
+                        disabled={studentPage <= 1 || studentListLoading}
+                        onClick={() => setStudentPage((page) => page - 1)}
+                      >
+                        Previous
+                      </button>
+                      {studentPaginationItems.map((item, index) =>
+                        item === "..." ? (
+                          <span
+                            className="student-pagination-ellipsis"
+                            key={`ellipsis-${index}`}
+                            aria-hidden="true"
+                          >
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`student-pagination-button${studentPage === item ? " active" : ""}`}
+                            key={item}
+                            aria-label={`Go to page ${item}`}
+                            aria-current={studentPage === item ? "page" : undefined}
+                            disabled={studentListLoading}
+                            onClick={() => setStudentPage(item)}
+                          >
+                            {item}
+                          </button>
+                        ),
+                      )}
+                      <button
+                        type="button"
+                        className="student-pagination-button"
+                        disabled={
+                          studentPage >= studentTotalPages || studentListLoading
+                        }
+                        onClick={() => setStudentPage((page) => page + 1)}
+                      >
+                        Next
+                      </button>
+                    </nav>
+                  )}
+                </div>
+              </div>
+
+              {selectedStudentProfile && (
+                <div
+                  className="student-profile-modal-overlay"
+                  role="presentation"
+                  onClick={() => setSelectedStudentProfile(null)}
+                >
+                  <section
+                    className="student-profile-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="student-profile-modal-title"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="student-profile-modal-header">
+                      <div>
+                        <span className="student-profile-modal-eyebrow">
+                          Student Profile
+                        </span>
+                        <h2 id="student-profile-modal-title">
+                          {selectedStudentProfile.full_name}
+                        </h2>
+                        <span className="erp-code-pill">
+                          {selectedStudentProfile.usn}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="student-profile-modal-close"
+                        onClick={() => setSelectedStudentProfile(null)}
+                        aria-label="Close student profile"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <div className="student-profile-modal-content">
+                      {studentProfileSections.map((section) => (
+                        <section
+                          className="student-profile-detail-section"
+                          key={section.title}
+                        >
+                          <h3>{section.title}</h3>
+                          <dl>
+                            {section.fields.map(([field, label]) => {
+                              const value = selectedStudentProfile[field];
+                              const isEmpty =
+                                value === null ||
+                                value === undefined ||
+                                value === "";
+                              const displayValue = isEmpty
+                                ? "Not provided"
+                                : field.endsWith("_percentage")
+                                  ? `${value}%`
+                                  : field === "dob"
+                                    ? String(value).slice(0, 10)
+                                    : String(value);
+                              return (
+                                <div
+                                  className="student-profile-detail-item"
+                                  key={field}
+                                >
+                                  <dt>{label}</dt>
+                                  <dd>{displayValue}</dd>
+                                </div>
+                              );
+                            })}
+                          </dl>
+                        </section>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
             </div>
           )}
 
