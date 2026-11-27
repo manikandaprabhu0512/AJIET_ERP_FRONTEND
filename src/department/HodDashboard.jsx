@@ -76,6 +76,9 @@ export default function HodDashboard({
 
   // Data
   const [faculties, setFaculties] = useState([]);
+  const [iaSubmissions] = useState([]);
+  const [leaveRequests] = useState([]);
+  const [selectedIaSubmissionId, setSelectedIaSubmissionId] = useState("");
   const [curriculumSchemes, setCurriculumSchemes] = useState([]);
   const [viewSchemeYear, setViewSchemeYear] = useState("");
   const [viewSemester, setViewSemester] = useState("1");
